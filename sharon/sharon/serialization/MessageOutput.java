@@ -1,14 +1,45 @@
+/*
+ * Result
+ * version 0.0 created 8/29/2017
+ *
+ * Authors:
+ * -Justin Ritter
+*/
+
 package sharon.serialization;
 
+import java.io.IOException;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 
 /**
- * Created by Justin Ritter on 8/29/2017.
+ *
  */
 public class MessageOutput {
-    private OutputStream outputSink;
+//
+    private OutputStreamWriter messageOut;
 
     public MessageOutput(OutputStream out) {
-        outputSink = out;
+        messageOut = new OutputStreamWriter(out);
+    }
+
+    /**
+     * Writes the string out to the OutputStreamWriter
+     *
+     * @param strOut string to write out
+     * @throws IOException if I/O problem
+     */
+    public void writeStr(String strOut) throws IOException {
+        messageOut.write(strOut, 0, strOut.length());
+        messageOut.flush();
+    }
+
+    /**
+     * Returns the out going message
+     *
+     * @return out going message
+     */
+    public OutputStreamWriter getWriter() {
+        return messageOut;
     }
 }

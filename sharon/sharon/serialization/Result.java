@@ -1,4 +1,4 @@
-/**
+/*
  * Result
  * version 0.0 created 8/29/2017
  *
@@ -10,16 +10,19 @@ package sharon.serialization;
 
 import java.io.IOException;
 
-/** import something*/
+/* import something*/
 
+/**
+ * Represents a SharOn search result and provides serialization/deserialization
+ */
 public class Result {
-    /** holds the file id*/
+    /* holds the file id*/
     private long fileId;
 
-    /** holds the file size*/
+    /* holds the file size*/
     private long fileSize;
 
-    /** holds the file name */
+    /* holds the file name */
     private String fileName;
 
     /**
@@ -42,9 +45,9 @@ public class Result {
      */
     public Result(long id, long size, String name)
             throws BadAttributeValueException{
-        fileId = id;
-        fileSize = size;
-        fileName = name;
+        setFileId(id);
+        setFileSize(size);
+        setFileName(name);
     }
 
     /**
@@ -76,6 +79,7 @@ public class Result {
      * @param id new file ID
      */
     public void setFileId(long id) throws BadAttributeValueException {
+//      add input checking to the setters
         fileId = id;
     }
 
@@ -85,6 +89,7 @@ public class Result {
      * @throws BadAttributeValueException if bad attribute value
      */
     public void setFileSize(long size) throws BadAttributeValueException{
+//      add input checking to the setters
         fileSize = size;
     }
 
@@ -94,6 +99,7 @@ public class Result {
      * @throws BadAttributeValueException if bad attribute value
      */
     public void setFileName(String name) throws BadAttributeValueException{
+//      add input checking to the setters
         fileName = name;
     }
 
@@ -103,7 +109,8 @@ public class Result {
      * @throws IOException if unable to serialize Result instance
      */
     public void encode(MessageOutput out) throws IOException {
-
+        String encodedMess = "";
+        out.writeStr(encodedMess);
     }
 
     /**
