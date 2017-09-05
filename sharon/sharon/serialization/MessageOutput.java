@@ -8,16 +8,18 @@
 
 package sharon.serialization;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 
 /**
  *
  */
 public class MessageOutput {
 //
-    private OutputStreamWriter messageOut;
+    public OutputStreamWriter messageOut;
 
     public MessageOutput(OutputStream out) {
         messageOut = new OutputStreamWriter(out);
@@ -30,6 +32,19 @@ public class MessageOutput {
      * @throws IOException if I/O problem
      */
     public void writeStr(String strOut) throws IOException {
+        messageOut.write(strOut, 0, strOut.length());
+        messageOut.flush();
+    }
+
+    /**
+     * Writes the byte[] out to the OutputStreamWriter
+     *
+     * @param byteOut byte[] to write out
+     * @throws IOException if I/O problem
+     */
+    public void writeStr(ByteArrayOutputStream byteOut) throws IOException {
+        String strOut = new String(byteOut.toByteArray(),
+                StandardCharsets.US_ASCII);
         messageOut.write(strOut, 0, strOut.length());
         messageOut.flush();
     }

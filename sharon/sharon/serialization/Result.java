@@ -8,9 +8,13 @@
 
 package sharon.serialization;
 
-import java.io.IOException;
 
-/* import something*/
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.util.Objects;
+
 
 /**
  * Represents a SharOn search result and provides serialization/deserialization
@@ -24,6 +28,24 @@ public class Result {
 
     /* holds the file name */
     private String fileName;
+
+    /*string check for numeric characters*/
+    private static final String nums = "^[\\d]+$";
+
+    /*string check for alphanumeric characters*/
+    private static final String alphaNums = "^[\\w\\-\\_\\.]+$";
+
+    /*error message*/
+    private static final String errMessage = "Error: bad field";
+
+    /*id field*/
+    private static final String IDstr = "ID";
+
+    /*Size field*/
+    private static final String Sizestr = "SIZE";
+
+    /*Name field*/
+    private static final String Namestr = "NAME";
 
     /**
      * Constructs a single Result instance from given input stream
@@ -43,11 +65,31 @@ public class Result {
      * @param name file name
      * @throws BadAttributeValueException if bad attribute value
      */
-    public Result(long id, long size, String name)
+    public Result(String id, String size, String name)
             throws BadAttributeValueException{
         setFileId(id);
         setFileSize(size);
         setFileName(name);
+    }
+
+    /**
+     * gets file id in bytes
+     * @return file id in bytes
+     */
+    private byte[] getFileId_bytes() {
+        ByteBuffer byteArr = ByteBuffer.allocate(4);
+        byteArr.putInt((int)getFileId());
+        return byteArr.array();
+    }
+
+    /**
+     * gets file size in bytes
+     * @return file size in bytes
+     */
+    private byte[] getFileSize_bytes() {
+        ByteBuffer byteArr = ByteBuffer.allocate(4);
+        byteArr.putInt((int)getFileSize());
+        return byteArr.array();
     }
 
     /**
@@ -78,19 +120,33 @@ public class Result {
      * Set file ID
      * @param id new file ID
      */
-    public void setFileId(long id) throws BadAttributeValueException {
-//      add input checking to the setters
-        fileId = id;
+    public void setFileId(String id) throws BadAttributeValueException {
+        if (id != null && !id.isEmpty()) {
+            if (id.matches(nums)) {
+                fileId = Long.parseLong(id);
+            } else {
+                throw new BadAttributeValueException(errMessage, IDstr);
+            }
+        } else {
+            throw new BadAttributeValueException(errMessage, IDstr);
+        }
     }
 
+
     /**
-     * Set file Size
-     * @param size new file Size
-     * @throws BadAttributeValueException if bad attribute value
+     * Set file ID
+     * @param id new file ID
      */
-    public void setFileSize(long size) throws BadAttributeValueException{
-//      add input checking to the setters
-        fileSize = size;
+    public void setFileSize(String id) throws BadAttributeValueException {
+        if (id != null && !id.isEmpty()) {
+            if (id.matches(nums)) {
+                fileId = Long.parseLong(id);
+            } else {
+                throw new BadAttributeValueException(errMessage, Sizestr);
+            }
+        } else {
+            throw new BadAttributeValueException(errMessage, Sizestr);
+        }
     }
 
     /**
@@ -99,8 +155,20 @@ public class Result {
      * @throws BadAttributeValueException if bad attribute value
      */
     public void setFileName(String name) throws BadAttributeValueException{
-//      add input checking to the setters
-        fileName = name;
+        if (name != null && !name.isEmpty()) {
+            if (name.matches(alphaNums)) {
+                if(fileName.contains("\n")) {
+                    fileName = name;
+                }
+                else {
+                    fileName = name + "\n";
+                }
+            } else {
+                throw new BadAttributeValueException(errMessage, Namestr);
+            }
+        } else {
+            throw new BadAttributeValueException(errMessage, Namestr);
+        }
     }
 
     /**
@@ -109,22 +177,55 @@ public class Result {
      * @throws IOException if unable to serialize Result instance
      */
     public void encode(MessageOutput out) throws IOException {
-        String encodedMess = "";
-        out.writeStr(encodedMess);
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        bOut.write(getFileId_bytes());
+        bOut.write(getFileSize_bytes());
+        bOut.write(getFileName().getBytes(StandardCharsets.US_ASCII));
+        out.writeStr(bOut);
     }
 
     /**
      * Implement according to the equals contract in Object
      */
     public boolean equals(Object obj) {
-        return this == obj;
+
+        /*a self check*/
+        if(this == obj) {
+            return true;
+        }
+
+        /*a null check*/
+        if(obj == null) {
+            return false;
+        }
+
+        /*a class check*/
+        if(getClass() != obj.getClass()) {
+            return false;
+        }
+
+        /*the data field checks*/
+        Result resObj = (Result)obj;
+        return Objects.equals(fileId, resObj.fileId) &&
+                Objects.equals(fileSize, resObj.fileSize) &&
+                Objects.equals(fileName, resObj.fileName);
     }
 
     /**
      * Implement according to the hashCode contract in Object
      */
-    public int hashcode() {
-        return 0;
+    public int hashCode() {
+
+        /* a prime number to help in the hash offset*/
+        int aPrime = 17;
+
+        /* the resulting hash*/
+        int hash = 1;
+
+        hash = aPrime * hash + (int)(fileId ^ (fileId >>> 32));
+        hash = aPrime * hash + (int)(fileSize ^ (fileSize >>> 32));
+        hash = aPrime * hash + fileName.hashCode();
+        return hash;
     }
 
     /**
@@ -132,6 +233,7 @@ public class Result {
      * @return human-readable Result representation
      */
     public String toString() {
-        return super.toString();
+        return "fileID: " + getFileId() + ", fileSize: " + getFileSize() +
+                ", fileName: " + getFileName();
     }
 }

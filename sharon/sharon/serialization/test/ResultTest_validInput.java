@@ -20,6 +20,8 @@ import sharon.serialization.*;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -42,10 +44,10 @@ public class ResultTest_validInput {
     private String xpectMsg;
 
     /*holds the first parameter of a result object*/
-    private long para1;
+    private String para1;
 
     /*holds the second parameter of a result object*/
-    private long para2;
+    private String para2;
 
     /*holds teh third parameter of a result object*/
     private String para3;
@@ -60,7 +62,7 @@ public class ResultTest_validInput {
      * @param p2 the file size
      * @param p3 the file name
      */
-    public ResultTest_validInput(String a, long p1, long p2, String p3) {
+    public ResultTest_validInput(String a, String p1, String p2, String p3) {
         try{
             xpectMsg = a;
             para1 = p1;
@@ -78,9 +80,14 @@ public class ResultTest_validInput {
      * @return an arraylist object that holds all the parameters to test
      */
     @Parameters
-    public static Collection<Object[]> list() {
+    public static Collection<Object[]> Goodlist() {
         ArrayList<Object[]> a = new ArrayList<>();
-        a.add(new Object[]{"00010001bob\r\n", 1L, 1L, "Bob"});
+        a.add(new Object[]{"00010001Bob\n", 1L, 1L, "Bob\n"});
+        a.add(new Object[]{"00010001bob\n", 1L, 1L, "Bob\n"});
+        a.add(new Object[]{"00010001This Is the correct file that you should " +
+                "use when trying to test this file\n", 1L, 1L,
+                "This Is the correct file that you should use when trying to " +
+                "test this file\n"});
         return a;
     }
 
@@ -96,9 +103,7 @@ public class ResultTest_validInput {
 
         Result res = new Result(para1, para2, para3);
         res.encode(out);
-
-        assertEquals(xpectMsg.getBytes(), bytesOut.toByteArray());
-//        assertEquals(xpectMsg, bytesOut.toString());
+        assertArrayEquals(xpectMsg.getBytes(), bytesOut.toByteArray());
     }
 
     /**
@@ -118,7 +123,8 @@ public class ResultTest_validInput {
     @Test
     public void toStringTest() throws BadAttributeValueException{
         Result res = new Result(para1, para2, para3);
-        String expected = "fileID: 1, fileSize: 1\", fileName: a";
+        String expected = "fileID: " + para1 + ", fileSize: " + para2 +
+                ", fileName: " + para3;
 
         assertEquals(expected, res.toString());
     }
@@ -134,65 +140,14 @@ public class ResultTest_validInput {
     }
 
     /**
-     * test the getter for fileId
+     * test the setters and getters of result
      * @throws BadAttributeValueException if bad attribute value
      */
     @Test
-    public void getFileIdTest() throws BadAttributeValueException{
+    public void getSetTester() throws BadAttributeValueException {
         Result res = new Result(para1, para2, para3);
         assertEquals(res.getFileId(), para1);
-    }
-
-    /**
-     * test the getter for fileName
-     * @throws BadAttributeValueException if bad attribute value
-     */
-    @Test
-    public void getFileNameTest() throws BadAttributeValueException {
-        Result res = new Result(para1, para2, para3);
-        assertEquals(res.getFileName(), para3);
-    }
-
-    /**
-     * test the getter for fileSize
-     * @throws BadAttributeValueException if bad attribute value
-     */
-    @Test
-    public void getFileSizeTest() throws BadAttributeValueException {
-        Result res = new Result(para1, para2, para3);
         assertEquals(res.getFileSize(), para2);
-    }
-
-    /**
-     * test the setter for fileId
-     * @throws BadAttributeValueException if bad attribute value
-     */
-    @Test
-    public void setFileIdTest() throws BadAttributeValueException {
-        Result res = new Result(para1, para2, para3);
-        res.setFileId(testID);
-        assertEquals(res.getFileId(), testID);
-    }
-
-    /**
-     * test the setter for fileName
-     * @throws BadAttributeValueException if bad attribute value
-     */
-    @Test
-    public void setFileNameTest() throws BadAttributeValueException {
-        Result res = new Result(para1, para2, para3);
-        res.setFileName(testName);
-        assertEquals(res.getFileName(), testName);
-    }
-
-    /**
-     * test the setter for fileSize
-     * @throws BadAttributeValueException if bad attribute value
-     */
-    @Test
-    public void setFileSizeTest() throws BadAttributeValueException {
-        Result res = new Result(para1, para2, para3);
-        res.setFileSize(testSize);
-        assertEquals(res.getFileSize(), testSize);
+        assertEquals(res.getFileName(), para3);
     }
 }
