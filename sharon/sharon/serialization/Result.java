@@ -51,7 +51,7 @@ public class Result {
      * @throws BadAttributeValueException if bad attribute value
      */
     public Result(MessageInput in) throws IOException,
-            BadAttributeValueException{
+            BadAttributeValueException {
         if(in.hasMore()) {
             setFileID(Long.parseLong(in.nextTok()));
             setFileSize(Long.parseLong(in.nextTok()));
@@ -67,7 +67,7 @@ public class Result {
      * @throws BadAttributeValueException if bad attribute value
      */
     public Result(Long id, Long size, String name)
-            throws BadAttributeValueException{
+            throws BadAttributeValueException {
         setFileID(id);
         setFileSize(size);
         setFileName(name);
