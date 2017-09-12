@@ -9,16 +9,23 @@
 
 package sharon.serialization;
 
-
 import java.io.IOException;
+
+import static sharon.serialization.RoutingService.BREADTHFIRSTBROADCAST;
 
 /**
  * Represents SharOn message
  */
 public class Message {
 
+    private byte[] messageID;
+    private int messageTtl;
+    private RoutingService messageService;
+    private byte[] messageSrcAddr;
+    private byte[] messageDestAddr;
+
     /**
-     * temporary constructor wil be removed
+     * temporary constructor will be removed
      * for compilation only
      */
     public Message() {
@@ -37,7 +44,11 @@ public class Message {
     public Message(byte[] id, int ttl, RoutingService routingService,
                    byte[] sourceSharOnAddress, byte[] destinationSharOnAddress)
             throws BadAttributeValueException {
-
+        setID(id);
+        setTtl(ttl);
+        setRoutingService(routingService);
+        setSourceAddress(sourceSharOnAddress);
+        setDestinationAddress(destinationSharOnAddress);
     }
 
     /**
@@ -59,7 +70,7 @@ public class Message {
     public static Message decode(MessageInput in)
             throws IOException, BadAttributeValueException {
         return new Message();
-;    }
+    }
 
     /**
      * Get type of message
@@ -108,7 +119,7 @@ public class Message {
      * @return routing service
      */
     public RoutingService getRoutingService() {
-        return new RoutingService();
+        return messageService;
     }
 
     /**
