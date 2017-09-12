@@ -10,6 +10,7 @@ package sharon.serialization;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -50,7 +51,7 @@ public class Response extends Message {
      * @return responding host address and port
      */
     public InetSocketAddress getResponseHost() {
-
+        return new InetSocketAddress(0);
     }
 
     /**
@@ -68,7 +69,7 @@ public class Response extends Message {
      * @return result list
      */
     public List<Result> getResultList() {
-
+        return new ArrayList<Result>();
     }
 
     /**

@@ -10,7 +10,11 @@ public enum RoutingService implements Serializable, Comparable<RoutingService> {
 
     private static final String routServ = "RoutingService";
 
-    /**
+    private static final String illParameter = "Error: no match enum";
+
+/*
+    */
+/**
      * Returns an array containing the constants of this enum type, in the order
      * they are declared. This method may be used to iterate over the constants
      * as follows:
@@ -20,25 +24,51 @@ public enum RoutingService implements Serializable, Comparable<RoutingService> {
      *
      * @return an array containing the constants of this enum type,
      *          in the order they are declared
-     */
+     *//*
+
     public static RoutingService[] values() {
 
         return new RoutingService[] {BREADTHFIRSTBROADCAST, DEPTHFIRSTSEARCH};
     }
 
-    /**
+    */
+/**
      * Returns the enum constant of this type with the specified name.
      * The string must match exactly an identifier used to declare an enum
      * constant in this type.
      * (Extraneous whitespace characters are not permitted.)
      * @param val the name of the enum constant to be returned.
      * @return the enum constant with the specified name
-     * @throws IllegalArgumentException
-     * @throws NullPointerException
-     */
-    public static RoutingService valueOf(String val) {
+     * @throws IllegalArgumentException if this enum type has no constant
+     *         with the specified name
+     * @throws NullPointerException if the argument is null
+     *//*
 
+    public static RoutingService valueOf(String val)
+            throws IllegalArgumentException, NullPointerException {
+        RoutingService res;
+
+        if(!"".equals(val)) {
+            String routServVal = val.toLowerCase();
+
+
+            switch (routServVal) {
+                case "breadthfirstbroadcast":
+                    res = RoutingService.BREADTHFIRSTBROADCAST;
+                    break;
+                case "depthfirstsearch":
+                    res = RoutingService.DEPTHFIRSTSEARCH;
+                    break;
+                default:
+                    throw new IllegalArgumentException(illParameter);
+            }
+        } else {
+          throw new NullPointerException("parameter is null");
+        }
+
+        return res;
     }
+*/
 
     /**
      * Get code for routing service
