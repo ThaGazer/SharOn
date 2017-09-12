@@ -18,8 +18,8 @@ import java.nio.charset.StandardCharsets;
  *
  */
 public class MessageOutput {
-//
-    public OutputStreamWriter messageOut;
+
+    private OutputStreamWriter messageOut;
 
     public MessageOutput(OutputStream out) {
         messageOut = new OutputStreamWriter(out);
@@ -43,18 +43,6 @@ public class MessageOutput {
      * @throws IOException if I/O problem
      */
     public void writeStr(ByteArrayOutputStream byteOut) throws IOException {
-        String strOut = new String(byteOut.toByteArray(),
-                StandardCharsets.US_ASCII);
-        messageOut.write(strOut, 0, strOut.length());
-        messageOut.flush();
-    }
 
-    /**
-     * Returns the out going message
-     *
-     * @return out going message
-     */
-    public OutputStreamWriter getWriter() {
-        return messageOut;
     }
 }

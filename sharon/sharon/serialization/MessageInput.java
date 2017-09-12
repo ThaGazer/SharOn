@@ -42,18 +42,14 @@ public class MessageInput {
     public String nextTok() throws IOException, BadAttributeValueException {
         String token = "";
         int a;
-        boolean readDone = false;
-        while (!readDone && (a = messageIn.read()) != -1) {
-            if (a == '\r') {
-                if (messageIn.read() != '\n') {
-                    throw new BadAttributeValueException(badFrame, "MessageInput");
-                }
-                readDone = true;
-            } else if (a == ' ') {
-                readDone = true;
-            } else {
+        int readDone = 0;
+        while (readDone != 4 && (a = messageIn.read()) != -1) {
+            if (a == '\n') {
+                readDone = 4;
+            }else {
 //                Checkout StringBuilder.append();
-                token += (char) a;
+                token += (char)a;
+                readDone++;
             }
         }
         if (token.isEmpty()) {
@@ -70,10 +66,11 @@ public class MessageInput {
      */
     public String getline() throws IOException, BadAttributeValueException {
         String line = "";
-        int a;
+        int a = -1;
         boolean readDone = false;
+
         while (!readDone && (a = messageIn.read()) != -1) {
-            if (a == '\r') {
+            if (a == '\n') {
                 if (messageIn.read() != '\n') {
                     throw new BadAttributeValueException
                             (badFrame, "MessageInput");
@@ -84,9 +81,18 @@ public class MessageInput {
                 line += (char) a;
             }
         }
+
+        if (a == -1) {
+            throw new BadAttributeValueException(badFrame, "MessageInput");
+        }
+
         if (line.isEmpty()) {
             throw new BadAttributeValueException(emptyMessage, "MessageInput");
         }
         return line;
+    }
+
+    public boolean hasMore() throws IOException {
+        return messageIn.ready();
     }
 }

@@ -8,11 +8,7 @@
 
 package sharon.serialization;
 
-
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 
@@ -20,31 +16,31 @@ import java.util.Objects;
  * Represents a SharOn search result and provides serialization/deserialization
  */
 public class Result {
-    /* holds the file id*/
+//     holds the file id
     private long fileId;
 
-    /* holds the file size*/
+//     holds the file size
     private long fileSize;
 
-    /* holds the file name */
+//     holds the file name
     private String fileName;
 
-    /*string check for numeric characters*/
+//    string check for numeric characters
     private static final String nums = "^[\\d]+$";
 
-    /*string check for alphanumeric characters*/
-    private static final String alphaNums = "^[\\w\\-\\_\\.]+$";
+//    string check for alphanumeric characters
+    private static final String alphaNums = "^[\\w\\-_.\\s]+$";
 
-    /*error message*/
+//    error message
     private static final String errMessage = "Error: bad field";
 
-    /*id field*/
+//    id field
     private static final String IDstr = "ID";
 
-    /*Size field*/
+//    Size field
     private static final String Sizestr = "SIZE";
 
-    /*Name field*/
+//    Name field
     private static final String Namestr = "NAME";
 
     /**
@@ -56,6 +52,11 @@ public class Result {
      */
     public Result(MessageInput in) throws IOException,
             BadAttributeValueException{
+        if(in.hasMore()) {
+            setFileID(Long.parseLong(in.nextTok()));
+            setFileSize(Long.parseLong(in.nextTok()));
+            setFileName(in.getline());
+        }
     }
 
     /**
@@ -65,9 +66,9 @@ public class Result {
      * @param name file name
      * @throws BadAttributeValueException if bad attribute value
      */
-    public Result(String id, String size, String name)
+    public Result(Long id, Long size, String name)
             throws BadAttributeValueException{
-        setFileId(id);
+        setFileID(id);
         setFileSize(size);
         setFileName(name);
     }
@@ -76,27 +77,47 @@ public class Result {
      * gets file id in bytes
      * @return file id in bytes
      */
-    private byte[] getFileId_bytes() {
-        ByteBuffer byteArr = ByteBuffer.allocate(4);
-        byteArr.putInt((int)getFileId());
-        return byteArr.array();
+    private String getFileID_bytes() {
+        byte[] resultBytes = new byte[4];
+        StringBuilder resStr = new StringBuilder();
+
+        for (int i = 3; i >= 0; i--) {
+            resultBytes[i] = (byte)(fileId & 0xFF);
+            fileId >>= 4;
+        }
+
+        for (byte bytes : resultBytes) {
+            resStr.append(bytes);
+        }
+
+        return resStr.toString();
     }
 
     /**
      * gets file size in bytes
      * @return file size in bytes
      */
-    private byte[] getFileSize_bytes() {
-        ByteBuffer byteArr = ByteBuffer.allocate(4);
-        byteArr.putInt((int)getFileSize());
-        return byteArr.array();
+    private String getFileSize_bytes() {
+        byte[] resultBytes = new byte[4];
+        StringBuilder resStr = new StringBuilder();
+
+        for (int i = 3; i >= 0; i--) {
+            resultBytes[i] = (byte)(fileSize & 0xFF);
+            fileSize >>= 4;
+        }
+
+        for (byte bytes : resultBytes) {
+            resStr.append(bytes);
+        }
+
+        return resStr.toString();
     }
 
     /**
      * Get file ID
      * @return file ID
      */
-    public long getFileId() {
+    public long getFileID() {
         return fileId;
     }
 
@@ -118,12 +139,13 @@ public class Result {
 
     /**
      * Set file ID
-     * @param id new file ID
+     * @param id_Long new file ID
      */
-    public void setFileId(String id) throws BadAttributeValueException {
-        if (id != null && !id.isEmpty()) {
-            if (id.matches(nums)) {
-                fileId = Long.parseLong(id);
+    private void setFileID(Long id_Long) throws BadAttributeValueException {
+        String id_Str = String.valueOf(id_Long);
+        if (id_Str != null && !id_Str.isEmpty()) {
+            if (id_Str.matches(nums)) {
+                fileId = Long.parseLong(id_Str);
             } else {
                 throw new BadAttributeValueException(errMessage, IDstr);
             }
@@ -132,15 +154,15 @@ public class Result {
         }
     }
 
-
     /**
      * Set file ID
-     * @param id new file ID
+     * @param id_Long new file ID
      */
-    public void setFileSize(String id) throws BadAttributeValueException {
-        if (id != null && !id.isEmpty()) {
-            if (id.matches(nums)) {
-                fileId = Long.parseLong(id);
+    private void setFileSize(Long id_Long) throws BadAttributeValueException {
+        String id_Str = String.valueOf(id_Long);
+        if (id_Str != null && !id_Str.isEmpty()) {
+            if (id_Str.matches(nums)) {
+                fileSize = Long.parseLong(id_Str);
             } else {
                 throw new BadAttributeValueException(errMessage, Sizestr);
             }
@@ -154,15 +176,10 @@ public class Result {
      * @param name new file Name
      * @throws BadAttributeValueException if bad attribute value
      */
-    public void setFileName(String name) throws BadAttributeValueException{
+    private void setFileName(String name) throws BadAttributeValueException{
         if (name != null && !name.isEmpty()) {
             if (name.matches(alphaNums)) {
-                if(fileName.contains("\n")) {
-                    fileName = name;
-                }
-                else {
-                    fileName = name + "\n";
-                }
+                fileName = name;
             } else {
                 throw new BadAttributeValueException(errMessage, Namestr);
             }
@@ -177,16 +194,21 @@ public class Result {
      * @throws IOException if unable to serialize Result instance
      */
     public void encode(MessageOutput out) throws IOException {
-        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-        bOut.write(getFileId_bytes());
-        bOut.write(getFileSize_bytes());
-        bOut.write(getFileName().getBytes(StandardCharsets.US_ASCII));
-        out.writeStr(bOut);
+        String id_Str = getFileID_bytes() + getFileSize_bytes();
+        id_Str += getFileName() + "\n\n";
+        /*
+        String id_bytes = new String(getFileID_bytes());
+        String size_bytes = new String(getFileSize_bytes(),
+                StandardCharsets.US_ASCII);
+
+        sOut = id_bytes + size_bytes + getFileName() + "\n\n";*/
+        out.writeStr(id_Str);
     }
 
     /**
      * Implement according to the equals contract in Object
      */
+    @Override
     public boolean equals(Object obj) {
 
         /*a self check*/
@@ -214,6 +236,7 @@ public class Result {
     /**
      * Implement according to the hashCode contract in Object
      */
+    @Override
     public int hashCode() {
 
         /* a prime number to help in the hash offset*/
@@ -233,7 +256,7 @@ public class Result {
      * @return human-readable Result representation
      */
     public String toString() {
-        return "fileID: " + getFileId() + ", fileSize: " + getFileSize() +
+        return "fileID: " + getFileID() + ", fileSize: " + getFileSize() +
                 ", fileName: " + getFileName();
     }
 }

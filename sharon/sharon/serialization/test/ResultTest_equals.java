@@ -33,8 +33,8 @@ public class ResultTest_equals {
     public ResultTest_equals(String a_id, String a_size, String a_name,
                              String b_id, String b_size, String b_name) {
         try {
-            a = new Result(a_id, a_size, a_name);
-            b = new Result(b_id, b_size, b_name);
+            a = new Result(Long.parseLong(a_id), Long.parseLong(a_size), a_name);
+            b = new Result(Long.parseLong(b_id), Long.parseLong(b_size), b_name);
         }
         catch (BadAttributeValueException e) {
             System.out.println(e.getAttributeName());
@@ -48,13 +48,13 @@ public class ResultTest_equals {
     @Parameters
     public static Collection<Object[]> list() {
         ArrayList<Object[]> a = new ArrayList<>();
-        a.add(new Object[]{"0001", "0001", "Bob", "0001", "0001", "Bob"});
+        a.add(new Object[]{"0001", "0001", "Bob jones.txt", "0001", "0001", "Bob jones.txt"});
         return a;
     }
 
     @Test
     public void testReflexive() {
-        assertTrue(a.equals(a));
+        assertEquals(a, a);
     }
 
     @Test
@@ -64,9 +64,7 @@ public class ResultTest_equals {
 
     @Test
     public void testTransitive() throws BadAttributeValueException{
-        Result c = new Result(Objects.toString(b.getFileId()),
-                Objects.toString(b.getFileSize()),
-                Objects.toString(b.getFileName()));
+        Result c = new Result(b.getFileID(),b.getFileSize(), b.getFileName());
 
         if(a.equals(b)) {
             if(b.equals(c)) {
