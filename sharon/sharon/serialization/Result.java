@@ -53,8 +53,8 @@ public class Result {
     public Result(MessageInput in) throws IOException,
             BadAttributeValueException {
         if(in.hasMore()) {
-            setFileID(Long.parseLong(in.nextTok()));
-            setFileSize(Long.parseLong(in.nextTok()));
+            setFileID(Long.parseLong(in.next4Tok()));
+            setFileSize(Long.parseLong(in.next4Tok()));
             setFileName(in.getline());
         }
     }

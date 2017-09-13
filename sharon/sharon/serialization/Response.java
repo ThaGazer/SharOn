@@ -23,16 +23,20 @@ public class Response extends Message {
      * @param id message id
      * @param ttl message TTL
      * @param routingService message routing service
-     * @param sourceSharOnAddress message source address
-     * @param destinationSharOnAddress message destination address
+     * @param sourceAddress message source address
+     * @param destinationAddress message destination address
      * @param responseHost  Address and port of responding host
      * @throws BadAttributeValueException if bad or null attribute value
      */
     public Response(byte[] id, int ttl, RoutingService routingService,
-            byte[] sourceSharOnAddress, byte[] destinationSharOnAddress,
+            byte[] sourceAddress, byte[] destinationAddress,
             InetSocketAddress responseHost)
             throws BadAttributeValueException {
 
+        super(id, ttl, routingService, sourceAddress, destinationAddress);
+        setResponseHost(responseHost);
+        
+        messageType = 2;
     }
 
     /**
@@ -44,6 +48,15 @@ public class Response extends Message {
     public Response(MessageInput in)
             throws IOException, BadAttributeValueException {
 
+    }
+
+    @Override
+    public void encode(MessageOutput out) throws IOException {
+
+    }
+
+    public int getMessageType() {
+        return messageType;
     }
 
     /**

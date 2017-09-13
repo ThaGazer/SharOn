@@ -18,8 +18,9 @@ import java.io.InputStreamReader;
 public class MessageInput {
 
     /* error messages */
-    private String badFrame= "Error: incorrect frame";
-    private String emptyMessage = "Error: empty message";
+    private static final String badRead = "Error: nothing to read";
+    private static final String badFrame = "Error: incorrect frame";
+    private static final String emptyMessage = "Error: empty message";
 
     /* a buffer for the class to hold stuff from the stream */
     private InputStreamReader messageIn;
@@ -33,13 +34,30 @@ public class MessageInput {
         messageIn = new InputStreamReader(in);
     }
 
+    public String nextOct() throws IOException, BadAttributeValueException {
+        String tok;
+        int a;
+
+        if (hasMore()) {
+            if((a = messageIn.read()) != -1) {
+                tok = String.valueOf(a);
+            } else {
+                throw new IOException(badRead);
+            }
+        } else {
+            throw new IOException(emptyMessage);
+        }
+
+        return tok;
+    }
+
     /**
      * Returns the next token in the inputStream if possible
      * @return next word in stream
      * @throws IOException if I/O problem
      * @throws BadAttributeValueException if parse or validation failure
      */
-    public String nextTok() throws IOException, BadAttributeValueException {
+    public String next4Tok() throws IOException, BadAttributeValueException {
         String token = "";
         int a;
         int readDone = 0;
@@ -92,6 +110,11 @@ public class MessageInput {
         return line;
     }
 
+    /**
+     * checks if the buffer is ready to be read from
+     * @return a yes or no if buffer has data to read
+     * @throws IOException some I/O problem
+     */
     public boolean hasMore() throws IOException {
         return messageIn.ready();
     }

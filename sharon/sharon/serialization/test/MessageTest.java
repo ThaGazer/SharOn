@@ -58,15 +58,4 @@ public class MessageTest {
         msg.encode(out);
         Assert.assertEquals(xpectMsg, byteOut.toString());
     }
-
-    @Test
-    public void getSetTest() throws BadAttributeValueException {
-        Message a = new Message(messageId, messageTtl, messageRoutServ,
-                messageSrcAddr, messageDestAddr);
-        assertArrayEquals(messageId, a.getID());
-        assertTrue(messageTtl == a.getTtl());
-        assertTrue(messageRoutServ == a.getRoutingService());
-        assertArrayEquals(messageSrcAddr, a.getSourceAddress());
-        assertArrayEquals(messageDestAddr, a.getDestinationAddress());
-    }
 }

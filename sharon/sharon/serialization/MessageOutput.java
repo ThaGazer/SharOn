@@ -36,13 +36,13 @@ public class MessageOutput {
         messageOut.flush();
     }
 
-    /**
+/*    *//**
      * Writes the byte[] out to the OutputStreamWriter
      *
      * @param byteOut byte[] to write out
      * @throws IOException if I/O problem
-     */
+     *//*
     public void writeStr(ByteArrayOutputStream byteOut) throws IOException {
 
-    }
+    }*/
 }

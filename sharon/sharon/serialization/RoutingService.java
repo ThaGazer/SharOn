@@ -10,7 +10,8 @@ public enum RoutingService implements Serializable, Comparable<RoutingService> {
 
     private static final String routServ = "RoutingService";
 
-    private static final String illParameter = "Error: no match enum";
+    private static final String illParameter = "Error: no matching enum";
+    private static final String attriGetRoutingServ = "getRoutingService";
 
 /*
     */
@@ -27,7 +28,6 @@ public enum RoutingService implements Serializable, Comparable<RoutingService> {
      *//*
 
     public static RoutingService[] values() {
-
         return new RoutingService[] {BREADTHFIRSTBROADCAST, DEPTHFIRSTSEARCH};
     }
 
@@ -75,7 +75,14 @@ public enum RoutingService implements Serializable, Comparable<RoutingService> {
      * @return routing service code
      */
     public int getServiceCode() {
-        return 0;
+        switch(this) {
+            case BREADTHFIRSTBROADCAST:
+                return 0;
+            case DEPTHFIRSTSEARCH:
+                return 1;
+            default:
+                return -1;
+        }
     }
 
     /**
@@ -86,19 +93,13 @@ public enum RoutingService implements Serializable, Comparable<RoutingService> {
      */
     public static RoutingService getRoutingService(int code)
             throws BadAttributeValueException {
-        RoutingService ret;
-
         switch(code) {
             case 0:
-                ret = RoutingService.BREADTHFIRSTBROADCAST;
-                break;
+                return RoutingService.BREADTHFIRSTBROADCAST;
             case 1:
-                ret = RoutingService.DEPTHFIRSTSEARCH;
-                break;
+                return RoutingService.DEPTHFIRSTSEARCH;
             default:
                 throw new BadAttributeValueException(routServ, "Bad field");
         }
-
-        return ret;
     }
 }

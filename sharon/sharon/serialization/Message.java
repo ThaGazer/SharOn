@@ -6,27 +6,31 @@
  * -Justin Ritter
  */
 
-
 package sharon.serialization;
 
 import java.io.IOException;
 
-import static sharon.serialization.RoutingService.BREADTHFIRSTBROADCAST;
-
 /**
  * Represents SharOn message
  */
-public class Message {
+public abstract class Message {
 
-    private byte[] messageID;
-    private int messageTtl;
-    private RoutingService messageService;
-    private byte[] messageSrcAddr;
-    private byte[] messageDestAddr;
+    private static final String emptyStream = "Error: empty stream";
+    private static final String unknownOp = "Error: unknown message type";
+    private static final String attriDecode = "decode";
+
+    /*the size of a search frame minus the payload*/
+    protected Integer frameSize = 29;
+
+    protected byte[] messageID;
+    protected int messageTtl;
+    protected RoutingService messageService;
+    protected byte[] messageSrcAddr;
+    protected byte[] messageDestAddr;
+    protected Integer messageType;
 
     /**
-     * temporary constructor will be removed
-     * for compilation only
+     * default constructor for compilation purposes
      */
     public Message() {
 
@@ -56,9 +60,7 @@ public class Message {
      * @param out serialization output destination
      * @throws IOException if serialization fails
      */
-    public void encode(MessageOutput out) throws IOException {
-
-    }
+    public abstract void encode(MessageOutput out) throws IOException;
 
     /**
      * Deserializes message from input source
@@ -69,23 +71,34 @@ public class Message {
      */
     public static Message decode(MessageInput in)
             throws IOException, BadAttributeValueException {
-        return new Message();
+        if(in.hasMore()) {
+            String messageType = in.nextOct();
+            switch(messageType) {
+                case "1":
+                    return new Search(in);
+                case "2":
+                    return new Response(in);
+                default:
+                    throw new BadAttributeValueException
+                            (unknownOp, attriDecode);
+            }
+        } else {
+            throw new BadAttributeValueException(emptyStream, attriDecode);
+        }
     }
 
     /**
      * Get type of message
      * @return message type
      */
-    public int getMessageType() {
-        return 0;
-    }
+    public abstract int getMessageType();
 
     /**
      * Get message id
      * @return message id
      */
     public byte[] getID() {
-        return new byte[0];
+        return messageID;
     }
 
     /**
@@ -102,7 +115,7 @@ public class Message {
      * @return message TTL
      */
     public int getTtl() {
-        return 0;
+        return messageTtl;
     }
 
     /**
@@ -137,7 +150,7 @@ public class Message {
      * @return source address
      */
     public byte[] getSourceAddress() {
-        return new byte[0];
+        return messageSrcAddr;
     }
 
     /**
@@ -155,7 +168,7 @@ public class Message {
      * @return destination address
      */
     public byte[] getDestinationAddress() {
-        return new byte[0];
+        return messageDestAddr;
     }
 
     /**
@@ -168,5 +181,9 @@ public class Message {
 
     }
 
-
+    protected void appendByteArr(StringBuilder a, byte[] bytes) {
+        for (byte b: bytes) {
+            a.append(b);
+        }
+    }
 }
