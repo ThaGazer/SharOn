@@ -17,6 +17,9 @@ public class Search extends Message {
 
     /*error message for is a frame size is not the right size*/
     private static final String frameSizeOff = "Error: frame-size is incorrect";
+    private static final String attriConstruct = "constructor";
+    private static final String attriID = "ID";
+    private static final String attriSrcAddr = "Source Address";
 
     /*declares the start of the StringBuilder class*/
     private static final Integer beginning = 0;
@@ -40,7 +43,8 @@ public class Search extends Message {
         super(id, ttl, routingService, sourceAddress, destinationAddress);
         setSearchString(searchString);
 
-        frameSize += searchString.length();
+        messagePayloadLength = searchString.length();
+        frameSize += messagePayloadLength;
         messageType = 1;
     }
 
@@ -52,6 +56,73 @@ public class Search extends Message {
      */
     public Search(MessageInput in)
             throws IOException, BadAttributeValueException {
+
+        if(in.hasMore()) {
+            int paraSize;
+
+            for (searchParameters para : searchParameters.values()) {
+                switch (para) {
+                    case ID:
+                        paraSize = searchParameters.ID.getVal();
+                        byte[] idHolder = new byte[paraSize];
+
+                        for(int i = 0; i < paraSize; i++) {
+                            String a = in.nextOct_str();
+                            idHolder[i] = Byte.parseByte(a);
+                        }
+
+                        setID(idHolder);
+                        break;
+                    case TTL:
+                        setTtl(in.nextOct_int());
+                        break;
+                    case ROUTINGSERVICE:
+                        setRoutingService(RoutingService.getRoutingService
+                                (in.nextOct_int()));
+                        break;
+                    case SRCADDR:
+                        paraSize = searchParameters.SRCADDR.getVal();
+                        byte[] srcAddrHolder = new byte[paraSize];
+
+                        for(int i = 0; i < paraSize; i++) {
+                            String a = in.nextOct_str();
+                            srcAddrHolder[i] = Byte.parseByte(a);
+                        }
+
+                        setSourceAddress(srcAddrHolder);
+                        break;
+                    case DESTADDR:
+                        paraSize = searchParameters.DESTADDR.getVal();
+                        byte[] destAddrHolder = new byte[paraSize];
+
+                        for(int i = 0; i < paraSize; i++) {
+                            String a = in.nextOct_str();
+                            destAddrHolder[i] = Byte.parseByte(a);
+                        }
+
+                        setSourceAddress(destAddrHolder);
+                        break;
+                    case PAYLOADLENGTH:
+                        paraSize = searchParameters.PAYLOADLENGTH.getVal();
+                        StringBuilder payloadHolder = new StringBuilder();
+
+                        for(int i = 0; i < paraSize; i++) {
+                            String a = in.nextOct_str();
+                            payloadHolder.append(a);
+                        }
+
+                        setPayloadLength(Integer.parseUnsignedInt
+                                (payloadHolder.substring(beginning)));
+                        break;
+                    default:
+                        throw new BadAttributeValueException
+                                (unknownOp, attriConstruct);
+                }
+            }
+            setSearchString(in.getline());
+        } else {
+            throw new BadAttributeValueException(emptyStream, attriConstruct);
+        }
     }
 
     @Override
@@ -74,9 +145,10 @@ public class Search extends Message {
         appendByteArr(encodedSearch, messageDestAddr);
 
         /*adds the payload length and the actual payload to string*/
-        encodedSearch.append(searchStr.length()).append(searchStr);
+        encodedSearch.append(Integer.toUnsignedString(messagePayloadLength)).
+                append(searchStr);
 
-        if(encodedSearch.length() != frameSize) {
+        if(encodedSearch.length() != (frameSize + searchStr.length())) {
             throw new IOException(frameSizeOff);
         }
 
@@ -106,5 +178,24 @@ public class Search extends Message {
             throws BadAttributeValueException{
         //add data check
         searchStr = searchString;
+    }
+
+    /**
+     * Get payload length
+     * @return payload length
+     */
+    @Override
+    public int getPayloadLength() {
+        return messagePayloadLength;
+    }
+
+    /**
+     * Set payload length
+     * @param a payload length
+     */
+    @Override
+    public void setPayloadLength(int a) {
+//        add data check
+        messagePayloadLength = a;
     }
 }

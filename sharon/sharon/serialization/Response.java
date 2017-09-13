@@ -18,6 +18,12 @@ import java.util.List;
  */
 public class Response extends Message {
 
+    /*error message for if a encoded message frame is no the right size*/
+    private static final String frameSizeOff = "Error: frame size is incorrect";
+
+    private InetSocketAddress messageSocket;
+    private List<Result> messageResList;
+
     /**
      * Constructs new response with user input
      * @param id message id
@@ -35,8 +41,9 @@ public class Response extends Message {
 
         super(id, ttl, routingService, sourceAddress, destinationAddress);
         setResponseHost(responseHost);
-        
-        messageType = 2;
+
+        frameSize = 7; //adds the response payload minus List<Result>.length
+        messageType = 2; //denotes a response message
     }
 
     /**
@@ -50,13 +57,43 @@ public class Response extends Message {
 
     }
 
+    /**
+     * Constructs a Response frame to be sent out
+     * @param out serialization output destination
+     * @throws IOException if frame error or IO errors
+     */
     @Override
     public void encode(MessageOutput out) throws IOException {
+        StringBuilder encodedMessage = new StringBuilder();
 
+        encodedMessage.append(messageType);
+        appendByteArr(encodedMessage, messageID);
+        encodedMessage.append(messageTtl).append(messageService);
+        appendByteArr(encodedMessage, messageSrcAddr);
+        appendByteArr(encodedMessage, messageDestAddr);
+        encodedMessage.append(messageSocket.getHostString());
+
+        if(encodedMessage.length() != frameSize) {
+            throw new IOException(frameSizeOff);
+        }
     }
 
+    /**
+     * returns the type of message this object is
+     * @return the message type
+     */
     public int getMessageType() {
         return messageType;
+    }
+
+    @Override
+    public int getPayloadLength() {
+        return messagePayloadLength;
+    }
+
+    @Override
+    public void setPayloadLength(int a) {
+
     }
 
     /**
@@ -64,7 +101,7 @@ public class Response extends Message {
      * @return responding host address and port
      */
     public InetSocketAddress getResponseHost() {
-        return new InetSocketAddress(0);
+        return messageSocket;
     }
 
     /**
@@ -74,7 +111,8 @@ public class Response extends Message {
      */
     public void setResponseHost(InetSocketAddress responseHost)
             throws BadAttributeValueException{
-
+//        add data check
+        messageSocket = responseHost;
     }
 
     /**
@@ -82,7 +120,7 @@ public class Response extends Message {
      * @return result list
      */
     public List<Result> getResultList() {
-        return new ArrayList<Result>();
+        return messageResList;
     }
 
     /**
@@ -92,6 +130,7 @@ public class Response extends Message {
      * if result is null or would make result list too long to encode
      */
     public void addResult(Result result) throws BadAttributeValueException {
-
+//        add data checks
+        messageResList.add(result);
     }
 }

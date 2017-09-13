@@ -9,28 +9,62 @@
 package sharon.serialization;
 
 import java.io.IOException;
+import static sharon.serialization.Message.searchParameters.*;
 
 /**
  * Represents SharOn message
  */
 public abstract class Message {
 
-    private static final String emptyStream = "Error: empty stream";
-    private static final String unknownOp = "Error: unknown message type";
-    private static final String attriDecode = "decode";
+    /**
+     * a list of all the parameters of a Message object with corresponding
+     * frame sizes
+     */
+    public enum searchParameters {
+        ID(15), TTL(1), ROUTINGSERVICE(1), SRCADDR(5),
+        DESTADDR(5), PAYLOADLENGTH(2);
+
+        private int intVal = 0;
+
+        /**
+         * creates an instance of searchParameters paired with an int value
+         * to denotes the frame size of the corresponding parameter
+         * @param a the frame size of the parameter
+         */
+        searchParameters(int a) {
+            intVal = a;
+        }
+
+        /**
+         * Get value of the enum
+         * @return value of the enum
+         */
+        public int getVal() {
+            return intVal;
+        }
+    }
+
+    /*error messages*/
+    protected static final String emptyStream = "Error: empty stream";
+    protected static final String unknownOp = "Error: unknown message type";
+    protected static final String attriDecode = "decode";
 
     /*the size of a search frame minus the payload*/
-    protected Integer frameSize = 29;
+    protected Integer frameSize = ID.getVal() + TTL.getVal() +
+            ROUTINGSERVICE.getVal() + SRCADDR.getVal() +
+            DESTADDR.getVal() + PAYLOADLENGTH.getVal();
 
     protected byte[] messageID;
     protected int messageTtl;
     protected RoutingService messageService;
     protected byte[] messageSrcAddr;
     protected byte[] messageDestAddr;
+    protected int messagePayloadLength;
     protected Integer messageType;
 
     /**
      * default constructor for compilation purposes
+     * should be removed eventually
      */
     public Message() {
 
@@ -72,7 +106,7 @@ public abstract class Message {
     public static Message decode(MessageInput in)
             throws IOException, BadAttributeValueException {
         if(in.hasMore()) {
-            String messageType = in.nextOct();
+            String messageType = in.nextOct_str();
             switch(messageType) {
                 case "1":
                     return new Search(in);
@@ -107,7 +141,8 @@ public abstract class Message {
      * @throws BadAttributeValueException if bad or null ID value
      */
     public void setID(byte[] id) throws BadAttributeValueException {
-
+//        add data checks
+        messageID = id;
     }
 
     /**
@@ -124,7 +159,8 @@ public abstract class Message {
      * @throws BadAttributeValueException if bad TTL value
      */
     public void setTtl(int ttl) throws BadAttributeValueException {
-
+//        add data checks
+        messageTtl = ttl;
     }
 
     /**
@@ -142,7 +178,8 @@ public abstract class Message {
      */
     public void setRoutingService(RoutingService routServ)
             throws BadAttributeValueException {
-
+//        add data check
+        messageService = routServ;
     }
 
     /**
@@ -160,7 +197,8 @@ public abstract class Message {
      */
     public void setSourceAddress(byte[] srcAddr)
             throws BadAttributeValueException{
-
+//        add data check
+        messageSrcAddr = srcAddr;
     }
 
     /**
@@ -178,9 +216,27 @@ public abstract class Message {
      */
     public void setDestinationAddress(byte[] destAddr)
             throws BadAttributeValueException{
-
+//        adda data check
+        messageDestAddr = destAddr;
     }
 
+    /**
+     * Get payload Length
+     * @return payload length
+     */
+    public abstract int getPayloadLength();
+
+    /**
+     * Sets the payload length
+     * @param a payload length
+     */
+    public abstract void setPayloadLength(int a);
+
+    /**
+     * Useful function that adds a byte[] to a StringBuilder
+     * @param a StringBuilder to add to
+     * @param bytes bytes to add
+     */
     protected void appendByteArr(StringBuilder a, byte[] bytes) {
         for (byte b: bytes) {
             a.append(b);

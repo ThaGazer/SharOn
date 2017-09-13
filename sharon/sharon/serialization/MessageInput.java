@@ -34,7 +34,7 @@ public class MessageInput {
         messageIn = new InputStreamReader(in);
     }
 
-    public String nextOct() throws IOException, BadAttributeValueException {
+    public String nextOct_str() throws IOException {
         String tok;
         int a;
 
@@ -49,6 +49,20 @@ public class MessageInput {
         }
 
         return tok;
+    }
+
+    public int nextOct_int() throws IOException {
+        int a;
+
+        if (hasMore()) {
+            if((a = messageIn.read()) != -1) {
+                return a;
+            } else {
+                throw new IOException(badRead);
+            }
+        } else {
+            throw new IOException(emptyMessage);
+        }
     }
 
     /**
