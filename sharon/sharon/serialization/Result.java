@@ -196,6 +196,7 @@ public class Result {
 
     /**
      * Implement according to the equals contract in Object
+     * @param obj object to compare to
      */
     @Override
     public boolean equals(Object obj) {
@@ -224,6 +225,7 @@ public class Result {
 
     /**
      * Implement according to the hashCode contract in Object
+     * @return the hash of a result object
      */
     @Override
     public int hashCode() {

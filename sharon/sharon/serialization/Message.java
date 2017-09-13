@@ -63,6 +63,10 @@ public abstract class Message {
             ROUTINGSERVICE.getVal() + SRCADDR.getVal() +
             DESTADDR.getVal() + PAYLOADLENGTH.getVal();
 
+
+    /*declares the start of the StringBuilder class*/
+    protected static final Integer beginning = 0;
+
     protected byte[] messageID;
     protected int messageTtl;
     protected RoutingService messageService;
@@ -249,6 +253,91 @@ public abstract class Message {
     protected void appendByteArr(StringBuilder a, byte[] bytes) {
         for (byte b: bytes) {
             a.append(b);
+        }
+    }
+
+    /**
+     * Constructs the Message packet frame
+     * @param in intput stream
+     * @throws IOException if IO problem or null
+     * @throws BadAttributeValueException if bad or null attribute value
+     */
+    protected void setMessageFrame(MessageInput in)
+            throws IOException, BadAttributeValueException {
+        if(in.hasMore()) {
+            int paraSize;
+
+            for(searchParameters para : searchParameters.values()) {
+                switch(para) {
+                    case ID:
+                        paraSize = searchParameters.ID.getVal();
+                        byte[] idHolder = new byte[paraSize];
+
+                        for(int i = 0; i < paraSize; i++) {
+                            String a = in.nextOct_str();
+
+                            if("\n".equals(a)) {
+                                throw new BadAttributeValueException
+                                        (frameSizeOff, attriID);
+                            }
+                            idHolder[i] = Byte.parseByte(a);
+                        }
+
+                        setID(idHolder);
+                        break;
+                    case TTL:
+                        setTtl(in.nextOct_int());
+                        break;
+                    case ROUTINGSERVICE:
+                        setRoutingService(RoutingService.getRoutingService
+                                (in.nextOct_int()));
+                        break;
+                    case SRCADDR:
+                        paraSize = searchParameters.SRCADDR.getVal();
+                        byte[] srcAddrHolder = new byte[paraSize];
+
+                        for(int i = 0; i < paraSize; i++) {
+                            String a = in.nextOct_str();
+
+                            if("\n".equals(a)) {
+                                throw new BadAttributeValueException
+                                        (frameSizeOff, attriSrcAddr);
+                            }
+                            srcAddrHolder[i] = Byte.parseByte(a);
+                        }
+
+                        setSourceAddress(srcAddrHolder);
+                        break;
+                    case DESTADDR:
+                        paraSize = searchParameters.DESTADDR.getVal();
+                        byte[] destAddrHolder = new byte[paraSize];
+
+                        for(int i = 0; i < paraSize; i++) {
+                            String a = in.nextOct_str();
+                            destAddrHolder[i] = Byte.parseByte(a);
+                        }
+
+                        setSourceAddress(destAddrHolder);
+                        break;
+                    case PAYLOADLENGTH:
+                        paraSize = searchParameters.PAYLOADLENGTH.getVal();
+                        StringBuilder payloadHolder = new StringBuilder();
+
+                        for(int i = 0; i < paraSize; i++) {
+                            String a = in.nextOct_str();
+                            payloadHolder.append(a);
+                        }
+
+                        setPayloadLength(Integer.parseUnsignedInt
+                                (payloadHolder.substring(beginning)));
+                        break;
+                    default:
+                        throw new BadAttributeValueException
+                                (unknownOp, attriConstruct);
+                }
+            }
+        } else {
+            throw new BadAttributeValueException(emptyStream, attriConstruct);
         }
     }
 }

@@ -8,21 +8,27 @@
 
 package sharon.serialization;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.nio.charset.StandardCharsets;
 
 /**
- *
+ * Serialization output source for messages
  */
 public class MessageOutput {
 
     private OutputStreamWriter messageOut;
 
-    public MessageOutput(OutputStream out) {
-        messageOut = new OutputStreamWriter(out);
+    /**
+     * Constructs a new output source from an OutputStream
+     * @param out byte output sink
+     */
+    public MessageOutput(OutputStream out) throws NullPointerException {
+        if(out != null) {
+            messageOut = new OutputStreamWriter(out);
+        } else {
+            throw new NullPointerException();
+        }
     }
 
     /**
@@ -35,14 +41,4 @@ public class MessageOutput {
         messageOut.write(strOut, 0, strOut.length());
         messageOut.flush();
     }
-
-/*    *//**
-     * Writes the byte[] out to the OutputStreamWriter
-     *
-     * @param byteOut byte[] to write out
-     * @throws IOException if I/O problem
-     *//*
-    public void writeStr(ByteArrayOutputStream byteOut) throws IOException {
-
-    }*/
 }

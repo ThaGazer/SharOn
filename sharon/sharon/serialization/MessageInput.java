@@ -34,6 +34,11 @@ public class MessageInput {
         messageIn = new InputStreamReader(in);
     }
 
+    /**
+     * Grabs the next byte in the Stream and returns it as a String
+     * @return the next byte as a String
+     * @throws IOException if IO problem or null stream
+     */
     public String nextOct_str() throws IOException {
         String tok;
         int a;
@@ -51,6 +56,11 @@ public class MessageInput {
         return tok;
     }
 
+    /**
+     * Grabs the next byte in the stream and returns it as a int
+     * @return the next byte as a int
+     * @throws IOException if IO problem or null stream
+     */
     public int nextOct_int() throws IOException {
         int a;
 

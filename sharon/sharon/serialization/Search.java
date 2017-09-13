@@ -15,9 +15,6 @@ import java.io.IOException;
  */
 public class Search extends Message {
 
-    /*declares the start of the StringBuilder class*/
-    private static final Integer beginning = 0;
-
     private String searchStr;
 
     /**
@@ -50,111 +47,41 @@ public class Search extends Message {
      */
     public Search(MessageInput in)
             throws IOException, BadAttributeValueException {
-
-        if(in.hasMore()) {
-            int paraSize;
-
-            for(searchParameters para : searchParameters.values()) {
-                switch(para) {
-                    case ID:
-                        paraSize = searchParameters.ID.getVal();
-                        byte[] idHolder = new byte[paraSize];
-
-                        for(int i = 0; i < paraSize; i++) {
-                            String a = in.nextOct_str();
-
-                            if("\n".equals(a)) {
-                                throw new BadAttributeValueException
-                                        (frameSizeOff, attriID);
-                            }
-                            idHolder[i] = Byte.parseByte(a);
-                        }
-
-                        setID(idHolder);
-                        break;
-                    case TTL:
-                        setTtl(in.nextOct_int());
-                        break;
-                    case ROUTINGSERVICE:
-                        setRoutingService(RoutingService.getRoutingService
-                                (in.nextOct_int()));
-                        break;
-                    case SRCADDR:
-                        paraSize = searchParameters.SRCADDR.getVal();
-                        byte[] srcAddrHolder = new byte[paraSize];
-
-                        for(int i = 0; i < paraSize; i++) {
-                            String a = in.nextOct_str();
-
-                            if("\n".equals(a)) {
-                                throw new BadAttributeValueException
-                                        (frameSizeOff, attriSrcAddr);
-                            }
-                            srcAddrHolder[i] = Byte.parseByte(a);
-                        }
-
-                        setSourceAddress(srcAddrHolder);
-                        break;
-                    case DESTADDR:
-                        paraSize = searchParameters.DESTADDR.getVal();
-                        byte[] destAddrHolder = new byte[paraSize];
-
-                        for(int i = 0; i < paraSize; i++) {
-                            String a = in.nextOct_str();
-                            destAddrHolder[i] = Byte.parseByte(a);
-                        }
-
-                        setSourceAddress(destAddrHolder);
-                        break;
-                    case PAYLOADLENGTH:
-                        paraSize = searchParameters.PAYLOADLENGTH.getVal();
-                        StringBuilder payloadHolder = new StringBuilder();
-
-                        for(int i = 0; i < paraSize; i++) {
-                            String a = in.nextOct_str();
-                            payloadHolder.append(a);
-                        }
-
-                        setPayloadLength(Integer.parseUnsignedInt
-                                (payloadHolder.substring(beginning)));
-                        break;
-                    default:
-                        throw new BadAttributeValueException
-                                (unknownOp, attriConstruct);
-                }
-            }
-            setSearchString(in.getline());
-        } else {
-            throw new BadAttributeValueException(emptyStream, attriConstruct);
-        }
+        setMessageFrame(in);
+        setSearchString(in.getline());
     }
 
+    /**
+     * Constructs a Search frame to be sent out
+     * @param out serialization output destination
+     * @throws IOException if frame error or IO errors
+     */
     @Override
     public void encode(MessageOutput out) throws IOException {
         StringBuilder encodedSearch = new StringBuilder();
 
         /*adds message type to string*/
-        encodedSearch.append(messageType);
+        encodedSearch.append(getMessageType());
 
         /*adds message id to string*/
-        appendByteArr(encodedSearch, messageID);
+        appendByteArr(encodedSearch, getID());
 
         /*adds message ttl and the Routing service to string*/
-        encodedSearch.append(messageTtl).append(messageService);
+        encodedSearch.append(getTtl()).append(getRoutingService());
 
         /*adds message source address to string*/
-        appendByteArr(encodedSearch, messageSrcAddr);
+        appendByteArr(encodedSearch, getSourceAddress());
 
         /*adds message destination address to string*/
-        appendByteArr(encodedSearch, messageDestAddr);
+        appendByteArr(encodedSearch, getDestinationAddress());
 
         /*adds the payload length and the actual payload to string*/
-        encodedSearch.append(Integer.toUnsignedString(messagePayloadLength)).
-                append(searchStr);
+        encodedSearch.append(Integer.toUnsignedString(getPayloadLength())).
+                append(getSearchString());
 
-        if(encodedSearch.length() != (frameSize + searchStr.length())) {
+/*        if(encodedSearch.length() != (frameSize + getSearchString().length())) {
             throw new IOException(frameSizeOff);
-        }
+        }*/
 
         /*writes out the encoded string*/
         out.writeStr(encodedSearch.substring(beginning));
