@@ -16,32 +16,21 @@ import java.util.Objects;
  * Represents a SharOn search result and provides serialization/deserialization
  */
 public class Result {
-//     holds the file id
-    private long fileId;
 
-//     holds the file size
-    private long fileSize;
+    private long fileId; //holds the file id
+    private long fileSize; //holds the file size
+    private String fileName; //holds the file name
 
-//     holds the file name
-    private String fileName;
-
-//    string check for numeric characters
+    /*string check for numeric characters*/
     private static final String nums = "^[\\d]+$";
 
-//    string check for alphanumeric characters
+    /*string check for alphanumeric characters*/
     private static final String alphaNums = "^[\\w\\-_.\\s]+$";
 
-//    error message
-    private static final String errMessage = "Error: bad field";
-
-//    id field
-    private static final String IDstr = "ID";
-
-//    Size field
-    private static final String Sizestr = "SIZE";
-
-//    Name field
-    private static final String Namestr = "NAME";
+    private static final String errMessage = "Error: bad field"; //error message
+    private static final String IDstr = "ID"; //id field
+    private static final String Sizestr = "SIZE"; //Size field
+    private static final String Namestr = "NAME"; //Name field
 
     /**
      * Constructs a single Result instance from given input stream

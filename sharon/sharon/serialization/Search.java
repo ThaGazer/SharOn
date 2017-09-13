@@ -15,12 +15,6 @@ import java.io.IOException;
  */
 public class Search extends Message {
 
-    /*error message for is a frame size is not the right size*/
-    private static final String frameSizeOff = "Error: frame-size is incorrect";
-    private static final String attriConstruct = "constructor";
-    private static final String attriID = "ID";
-    private static final String attriSrcAddr = "Source Address";
-
     /*declares the start of the StringBuilder class*/
     private static final Integer beginning = 0;
 
@@ -60,14 +54,19 @@ public class Search extends Message {
         if(in.hasMore()) {
             int paraSize;
 
-            for (searchParameters para : searchParameters.values()) {
-                switch (para) {
+            for(searchParameters para : searchParameters.values()) {
+                switch(para) {
                     case ID:
                         paraSize = searchParameters.ID.getVal();
                         byte[] idHolder = new byte[paraSize];
 
                         for(int i = 0; i < paraSize; i++) {
                             String a = in.nextOct_str();
+
+                            if("\n".equals(a)) {
+                                throw new BadAttributeValueException
+                                        (frameSizeOff, attriID);
+                            }
                             idHolder[i] = Byte.parseByte(a);
                         }
 
@@ -86,6 +85,11 @@ public class Search extends Message {
 
                         for(int i = 0; i < paraSize; i++) {
                             String a = in.nextOct_str();
+
+                            if("\n".equals(a)) {
+                                throw new BadAttributeValueException
+                                        (frameSizeOff, attriSrcAddr);
+                            }
                             srcAddrHolder[i] = Byte.parseByte(a);
                         }
 

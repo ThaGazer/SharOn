@@ -46,7 +46,16 @@ public abstract class Message {
 
     /*error messages*/
     protected static final String emptyStream = "Error: empty stream";
+    protected static final String emptyAttribute = "Error: empty attribute";
     protected static final String unknownOp = "Error: unknown message type";
+
+    /*error message for is a frame size is not the right size*/
+    protected static final String frameSizeOff =
+            "Error: frame-size is incorrect";
+
+    protected static final String attriConstruct = "constructor";
+    protected static final String attriID = "ID";
+    protected static final String attriSrcAddr = "Source Address";
     protected static final String attriDecode = "decode";
 
     /*the size of a search frame minus the payload*/

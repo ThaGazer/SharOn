@@ -20,6 +20,10 @@ public class Response extends Message {
 
     /*error message for if a encoded message frame is no the right size*/
     private static final String frameSizeOff = "Error: frame size is incorrect";
+    private static final String attriAddResult = "addResult";
+
+    /*declares the start of the StringBuilder class*/
+    private static final Integer beginning = 0;
 
     private InetSocketAddress messageSocket;
     private List<Result> messageResList;
@@ -42,7 +46,7 @@ public class Response extends Message {
         super(id, ttl, routingService, sourceAddress, destinationAddress);
         setResponseHost(responseHost);
 
-        frameSize = 7; //adds the response payload minus List<Result>.length
+        frameSize += 7; //adds the response payload minus List<Result>.length
         messageType = 2; //denotes a response message
     }
 
@@ -54,7 +58,40 @@ public class Response extends Message {
      */
     public Response(MessageInput in)
             throws IOException, BadAttributeValueException {
+        int paraSize;
 
+        for (searchParameters para: searchParameters.values()) {
+            switch(para) {
+                case ID:
+                    break;
+                case TTL:
+                    break;
+                case ROUTINGSERVICE:
+                    break;
+                case SRCADDR:
+                    break;
+                case DESTADDR:
+                    break;
+                case PAYLOADLENGTH:
+                    break;
+                default:
+                    throw new BadAttributeValueException
+                            (unknownOp, attriConstruct);
+            }
+        }
+        setMatches(in.nextOct_int());
+
+        StringBuilder portHolder = new StringBuilder();
+        for(int i = 0; i < 2; i++) {
+            String a = in.nextOct_str();
+            portHolder.append(a);
+        }
+        InetSocketAddress a = new InetSocketAddress
+                (in.next4Tok(), Integer.parseUnsignedInt
+                        (portHolder.substring(beginning)));
+
+        setResponseHost(a);
+        messageResList = new ArrayList<>();
     }
 
     /**
@@ -93,7 +130,8 @@ public class Response extends Message {
 
     @Override
     public void setPayloadLength(int a) {
-
+//        add data check?
+        messagePayloadLength = a;
     }
 
     /**
@@ -131,6 +169,12 @@ public class Response extends Message {
      */
     public void addResult(Result result) throws BadAttributeValueException {
 //        add data checks
-        messageResList.add(result);
+        if(!result.equals(null)) {
+            messageResList.add(result);
+        }
+        else {
+            throw new BadAttributeValueException
+                    (emptyAttribute, attriAddResult);
+        }
     }
 }
