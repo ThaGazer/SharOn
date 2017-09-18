@@ -48,13 +48,22 @@ public abstract class Message {
     protected static final String emptyStream = "Error: empty stream";
     protected static final String emptyAttribute = "Error: empty attribute";
     protected static final String unknownOp = "Error: unknown message type";
+    protected static final String wrongSize = "Error: attribute wrong size";
+    protected static final String badVal = "Error: incorrect value";
 
-    /*error message for is a frame size is not the right size*/
+    /*error message if a frame size is not the right size*/
     protected static final String frameSizeOff =
             "Error: frame-size is incorrect";
 
+    /*data checks points*/
+    protected static final String alphaNum = "[\\w]+";
+    protected static final String numerics = "[\\d]+";
+
+    /*different attribute messages to throw*/
     protected static final String attriConstruct = "constructor";
     protected static final String attriID = "ID";
+    protected static final String attriTtl = "ttl";
+    protected static final String attriRoutServ = "RoutingService";
     protected static final String attriSrcAddr = "Source Address";
     protected static final String attriDecode = "decode";
 
@@ -63,8 +72,10 @@ public abstract class Message {
             ROUTINGSERVICE.getVal() + SRCADDR.getVal() +
             DESTADDR.getVal() + PAYLOADLENGTH.getVal();
 
+    /*the size of a id attribute*/
+    protected static final int idSize = 15;
 
-    /*declares the start of the StringBuilder class*/
+    /*declares the starting position of the StringBuilder class*/
     protected static final Integer beginning = 0;
 
     protected byte[] messageID;
@@ -74,14 +85,6 @@ public abstract class Message {
     protected byte[] messageDestAddr;
     protected int messagePayloadLength;
     protected Integer messageType;
-
-    /**
-     * default constructor for compilation purposes
-     * should be removed eventually
-     */
-    public Message() {
-
-    }
 
     /**
      * Constructs base message with given values
@@ -154,8 +157,15 @@ public abstract class Message {
      * @throws BadAttributeValueException if bad or null ID value
      */
     public void setID(byte[] id) throws BadAttributeValueException {
-//        add data checks
-        messageID = id;
+        if(id.length != idSize) {
+            String dataCheck = new String(id);
+
+            if(dataCheck.matches(alphaNum)) {
+                messageID = id;
+            }
+        } else {
+            throw new BadAttributeValueException(attriID, wrongSize);
+        }
     }
 
     /**
@@ -172,8 +182,13 @@ public abstract class Message {
      * @throws BadAttributeValueException if bad TTL value
      */
     public void setTtl(int ttl) throws BadAttributeValueException {
-//        add data checks
-        messageTtl = ttl;
+        String dataChcek = String.valueOf(ttl);
+
+        if(dataChcek.matches(numerics)) {
+            messageTtl = ttl;
+        } else {
+            throw new BadAttributeValueException(attriTtl, badVal);
+        }
     }
 
     /**
@@ -192,7 +207,12 @@ public abstract class Message {
     public void setRoutingService(RoutingService routServ)
             throws BadAttributeValueException {
 //        add data check
-        messageService = routServ;
+        if(routServ != null) {
+            messageService = routServ;
+        } else {
+            throw new BadAttributeValueException(attriRoutServ, emptyAttribute);
+        }
+
     }
 
     /**
