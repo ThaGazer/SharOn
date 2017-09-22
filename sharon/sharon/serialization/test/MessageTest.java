@@ -9,6 +9,7 @@ import sharon.serialization.*;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -51,7 +52,8 @@ public class MessageTest {
 
     @Test
     public void en_decodeTest() throws IOException, BadAttributeValueException {
-        MessageInput in = new MessageInput(new ByteArrayInputStream(xpectMsg.getBytes()));
+        MessageInput in = new MessageInput(new ByteArrayInputStream
+                (xpectMsg.getBytes(StandardCharsets.US_ASCII)));
         Message msg = Message.decode(in);
         ByteArrayOutputStream byteOut= new ByteArrayOutputStream();
         MessageOutput out = new MessageOutput(byteOut);

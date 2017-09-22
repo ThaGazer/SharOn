@@ -18,9 +18,14 @@ import java.util.List;
  */
 public class Response extends Message {
 
-    /*error message for if a encoded message frame is no the right size*/
+    /*error message for if a encoded message*/
     private static final String frameSizeOff = "Error: frame size is incorrect";
+
+    /*attributes of response*/
     private static final String attriAddResult = "addResult";
+    private static final String attriPayLength = "Payload Length";
+    private static final String attriResponseHost = "Response Host";
+    private static final String attriMatch = "Matches";
 
     /*declares the start of the StringBuilder class*/
     private static final Integer beginning = 0;
@@ -117,9 +122,6 @@ public class Response extends Message {
                 append(getResponseHost().getHostString()).
                 append(getResultList());
 
-        /*if(encodedMessage.length() != frameSize) {
-            throw new IOException(frameSizeOff);
-        }*/
         out.writeStr(encodedMessage.substring(beginning));
     }
 
@@ -127,6 +129,7 @@ public class Response extends Message {
      * Get message type
      * @return the message type
      */
+    @Override
     public int getMessageType() {
         return messageType;
     }
@@ -145,9 +148,12 @@ public class Response extends Message {
      * @param a payload length
      */
     @Override
-    public void setPayloadLength(int a) {
-//        add data check?
-        messagePayloadLength = a;
+    public void setPayloadLength(int a) throws BadAttributeValueException {
+        if(intCheck(a)) {
+            messagePayloadLength = a;
+        } else {
+            throw new BadAttributeValueException(unknownAttri, attriPayLength);
+        }
     }
 
     /**
@@ -165,8 +171,13 @@ public class Response extends Message {
      */
     public void setResponseHost(InetSocketAddress responseHost)
             throws BadAttributeValueException{
-//        add data check
-        messageSocket = responseHost;
+
+        if(responseHost != null) {
+            messageSocket = responseHost;
+        } else {
+            throw new BadAttributeValueException
+                    (emptyAttribute, attriResponseHost);
+        }
     }
 
     /**
@@ -181,9 +192,12 @@ public class Response extends Message {
      * Set message matches
      * @param matches how many search matches
      */
-    public void setMatches(int matches) {
-//        add data check
-        messageMatches = matches;
+    public void setMatches(int matches) throws BadAttributeValueException {
+        if(intCheck(matches)) {
+            messageMatches = matches;
+        } else {
+            throw new BadAttributeValueException(unknownAttri, attriMatch);
+        }
     }
 
     /**

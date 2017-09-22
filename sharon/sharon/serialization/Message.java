@@ -48,7 +48,9 @@ public abstract class Message {
     protected static final String emptyStream = "Error: empty stream";
     protected static final String emptyAttribute = "Error: empty attribute";
     protected static final String unknownOp = "Error: unknown message type";
+    protected static final String unknownAttri = "Error: unknown attribute";
     protected static final String wrongSize = "Error: attribute wrong size";
+    protected static final String dataCheck = "Error: data check";
     protected static final String badVal = "Error: incorrect value";
 
     /*error message if a frame size is not the right size*/
@@ -65,6 +67,7 @@ public abstract class Message {
     protected static final String attriTtl = "ttl";
     protected static final String attriRoutServ = "RoutingService";
     protected static final String attriSrcAddr = "Source Address";
+    protected static final String attriDestAddr = "Destination Address";
     protected static final String attriDecode = "decode";
 
     /*the size of a search frame minus the payload*/
@@ -74,6 +77,8 @@ public abstract class Message {
 
     /*the size of a id attribute*/
     protected static final int idSize = 15;
+    protected static final int srcSize = 5;
+    protected static final int destSize = 5;
 
     /*declares the starting position of the StringBuilder class*/
     protected static final Integer beginning = 0;
@@ -85,6 +90,13 @@ public abstract class Message {
     protected byte[] messageDestAddr;
     protected int messagePayloadLength;
     protected Integer messageType;
+
+    /**
+     * default constructor for compiling
+     */
+    public Message() {
+
+    }
 
     /**
      * Constructs base message with given values
@@ -124,6 +136,8 @@ public abstract class Message {
         if(in.hasMore()) {
             String messageType = in.nextOct_str();
             switch(messageType) {
+                //these are the wrong checks for sure
+                //right check?
                 case "1":
                     return new Search(in);
                 case "2":
@@ -157,14 +171,10 @@ public abstract class Message {
      * @throws BadAttributeValueException if bad or null ID value
      */
     public void setID(byte[] id) throws BadAttributeValueException {
-        if(id.length != idSize) {
-            String dataCheck = new String(id);
-
-            if(dataCheck.matches(alphaNum)) {
-                messageID = id;
-            }
+        if(byteCheck(id, attriID)) {
+            messageID = id;
         } else {
-            throw new BadAttributeValueException(attriID, wrongSize);
+            throw new BadAttributeValueException(attriID, dataCheck);
         }
     }
 
@@ -182,9 +192,7 @@ public abstract class Message {
      * @throws BadAttributeValueException if bad TTL value
      */
     public void setTtl(int ttl) throws BadAttributeValueException {
-        String dataChcek = String.valueOf(ttl);
-
-        if(dataChcek.matches(numerics)) {
+        if(intCheck(ttl)) {
             messageTtl = ttl;
         } else {
             throw new BadAttributeValueException(attriTtl, badVal);
@@ -206,9 +214,14 @@ public abstract class Message {
      */
     public void setRoutingService(RoutingService routServ)
             throws BadAttributeValueException {
-//        add data check
         if(routServ != null) {
-            messageService = routServ;
+            for(RoutingService a : RoutingService.values()) {
+                if(a.equals(routServ)) {
+                    messageService = routServ;
+                    return;
+                }
+            }
+            throw new BadAttributeValueException(attriRoutServ, unknownAttri);
         } else {
             throw new BadAttributeValueException(attriRoutServ, emptyAttribute);
         }
@@ -229,9 +242,12 @@ public abstract class Message {
      * @throws BadAttributeValueException if bad or null address value
      */
     public void setSourceAddress(byte[] srcAddr)
-            throws BadAttributeValueException{
-//        add data check
-        messageSrcAddr = srcAddr;
+            throws BadAttributeValueException {
+        if(byteCheck(srcAddr, attriSrcAddr)) {
+                messageSrcAddr = srcAddr;
+        } else {
+            throw new BadAttributeValueException(attriSrcAddr, dataCheck);
+        }
     }
 
     /**
@@ -249,8 +265,12 @@ public abstract class Message {
      */
     public void setDestinationAddress(byte[] destAddr)
             throws BadAttributeValueException{
-//        adda data check
-        messageDestAddr = destAddr;
+        if(byteCheck(destAddr, attriDestAddr)) {
+            messageDestAddr = destAddr;
+        }
+        else {
+            throw new BadAttributeValueException(dataCheck, attriDestAddr);
+        }
     }
 
     /**
@@ -263,7 +283,56 @@ public abstract class Message {
      * Sets the payload length
      * @param a payload length
      */
-    public abstract void setPayloadLength(int a);
+    public abstract void setPayloadLength(int a) throws BadAttributeValueException;
+
+    /**
+     * Does a SharOn protocol check for byte arrays
+     * @param a byte array to check
+     * @return if the check pass or fails
+     */
+    public boolean byteCheck(byte[] a, String attri)
+            throws BadAttributeValueException {
+        int dataSize;
+
+        switch(attri) {
+            case attriID:
+                dataSize = idSize;
+                break;
+            case attriSrcAddr:
+                dataSize = srcSize;
+                break;
+            case attriDestAddr:
+                dataSize = destSize;
+                break;
+            default:
+                dataSize = 0;
+        }
+
+        if(a.length != dataSize) {
+            String dataCheck = new String(a);
+            return dataCheck.matches(alphaNum);
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * Does a SharOn protocol check for ints
+     * @param a integer to check
+     * @return if the check pass or fails
+     */
+    public boolean intCheck(Integer a) {
+        if(a != null) {
+            String intData = String.valueOf(a);
+            if(intData.matches(numerics)) {
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            return false;
+        }
+    }
 
     /**
      * Useful function that adds a byte[] to a StringBuilder

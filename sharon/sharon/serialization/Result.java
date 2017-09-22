@@ -131,8 +131,8 @@ public class Result {
      * @param id_Long new file ID
      */
     private void setFileID(Long id_Long) throws BadAttributeValueException {
-        String id_Str = String.valueOf(id_Long);
-        if (id_Str != null && !id_Str.isEmpty()) {
+        if (id_Long != null) {
+            String id_Str = String.valueOf(id_Long);
             if (id_Str.matches(nums)) {
                 fileId = Long.parseLong(id_Str);
             } else {
@@ -148,8 +148,8 @@ public class Result {
      * @param id_Long new file ID
      */
     private void setFileSize(Long id_Long) throws BadAttributeValueException {
-        String id_Str = String.valueOf(id_Long);
-        if (id_Str != null && !id_Str.isEmpty()) {
+        if (id_Long != null) {
+            String id_Str = String.valueOf(id_Long);
             if (id_Str.matches(nums)) {
                 fileSize = Long.parseLong(id_Str);
             } else {
@@ -166,7 +166,7 @@ public class Result {
      * @throws BadAttributeValueException if bad attribute value
      */
     private void setFileName(String name) throws BadAttributeValueException{
-        if (name != null && !name.isEmpty()) {
+        if (name != null) {
             if (name.matches(alphaNums)) {
                 fileName = name;
             } else {
@@ -185,12 +185,6 @@ public class Result {
     public void encode(MessageOutput out) throws IOException {
         String id_Str = getFileID_bytes() + getFileSize_bytes();
         id_Str += getFileName() + "\n\n";
-        /*
-        String id_bytes = new String(getFileID_bytes());
-        String size_bytes = new String(getFileSize_bytes(),
-                StandardCharsets.US_ASCII);
-
-        sOut = id_bytes + size_bytes + getFileName() + "\n\n";*/
         out.writeStr(id_Str);
     }
 
