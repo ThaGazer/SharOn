@@ -49,11 +49,7 @@ public abstract class Message {
     protected static final String emptyAttribute = "Error: empty attribute";
     protected static final String unknownOp = "Error: unknown message type";
     protected static final String unknownAttri = "Error: unknown attribute";
-    protected static final String wrongSize = "Error: attribute wrong size";
     protected static final String dataCheck = "Error: data check";
-    protected static final String badVal = "Error: incorrect value";
-
-    /*error message if a frame size is not the right size*/
     protected static final String frameSizeOff =
             "Error: frame-size is incorrect";
 
@@ -74,11 +70,6 @@ public abstract class Message {
     protected Integer frameSize = ID.getVal() + TTL.getVal() +
             ROUTINGSERVICE.getVal() + SRCADDR.getVal() +
             DESTADDR.getVal() + PAYLOADLENGTH.getVal();
-
-    /*the size of a id attribute*/
-    protected static final int idSize = 15;
-    protected static final int srcSize = 5;
-    protected static final int destSize = 5;
 
     /*declares the starting position of the StringBuilder class*/
     protected static final Integer beginning = 0;
@@ -195,7 +186,7 @@ public abstract class Message {
         if(intCheck(ttl)) {
             messageTtl = ttl;
         } else {
-            throw new BadAttributeValueException(attriTtl, badVal);
+            throw new BadAttributeValueException(attriTtl, dataCheck);
         }
     }
 
@@ -296,13 +287,13 @@ public abstract class Message {
 
         switch(attri) {
             case attriID:
-                dataSize = idSize;
+                dataSize = searchParameters.ID.getVal();
                 break;
             case attriSrcAddr:
-                dataSize = srcSize;
+                dataSize = searchParameters.SRCADDR.getVal();
                 break;
             case attriDestAddr:
-                dataSize = destSize;
+                dataSize = searchParameters.DESTADDR.getVal();
                 break;
             default:
                 dataSize = 0;

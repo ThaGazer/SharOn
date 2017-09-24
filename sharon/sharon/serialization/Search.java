@@ -15,6 +15,11 @@ import java.io.IOException;
  */
 public class Search extends Message {
 
+    /*attributes of a search object*/
+    protected static final String attriPayloadSize = "Payload size";
+    protected static final String attriSearchString = "Search String";
+
+
     private String searchStr;
 
     /**
@@ -49,6 +54,7 @@ public class Search extends Message {
             throws IOException, BadAttributeValueException {
         setMessageFrame(in);
         setSearchString(in.getline());
+        messageType = 1;
     }
 
     /**
@@ -79,10 +85,6 @@ public class Search extends Message {
         encodedSearch.append(Integer.toUnsignedString(getPayloadLength())).
                 append(getSearchString());
 
-/*        if(encodedSearch.length() != (frameSize + getSearchString().length())) {
-            throw new IOException(frameSizeOff);
-        }*/
-
         /*writes out the encoded string*/
         out.writeStr(encodedSearch.substring(beginning));
     }
@@ -107,8 +109,12 @@ public class Search extends Message {
      */
     public void setSearchString(String searchString)
             throws BadAttributeValueException{
-        //add data check
-        searchStr = searchString;
+        if(!searchString.isEmpty()) {
+            searchStr = searchString;
+        } else {
+            throw new BadAttributeValueException
+                    (emptyAttribute, attriSearchString);
+        }
     }
 
     /**
@@ -123,10 +129,14 @@ public class Search extends Message {
     /**
      * Set payload length
      * @param a payload length
+     * @throws BadAttributeValueException if null or bad payload size
      */
     @Override
-    public void setPayloadLength(int a) {
-//        add data check
-        messagePayloadLength = a;
+    public void setPayloadLength(int a) throws BadAttributeValueException {
+        if(intCheck(a)) {
+            messagePayloadLength = a;
+        } else {
+            throw new BadAttributeValueException(dataCheck, attriPayloadSize);
+        }
     }
 }

@@ -171,7 +171,6 @@ public class Response extends Message {
      */
     public void setResponseHost(InetSocketAddress responseHost)
             throws BadAttributeValueException{
-
         if(responseHost != null) {
             messageSocket = responseHost;
         } else {
@@ -215,7 +214,6 @@ public class Response extends Message {
      * if result is null or would make result list too long to encode
      */
     public void addResult(Result result) throws BadAttributeValueException {
-//        add data checks
         if(!(result == null)) {
             messageResList.add(result);
         }
