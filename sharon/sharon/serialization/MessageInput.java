@@ -11,6 +11,9 @@ package sharon.serialization;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Deserialization input source for messages
@@ -31,7 +34,7 @@ public class MessageInput {
      * @throws NullPointerException if in is null
      */
     public MessageInput(InputStream in) throws NullPointerException{
-        messageIn = new InputStreamReader(in);
+        messageIn = new InputStreamReader(in, StandardCharsets.US_ASCII);
     }
 
     /**
@@ -45,7 +48,8 @@ public class MessageInput {
 
         if (hasMore()) {
             if((a = messageIn.read()) != -1) {
-                tok = String.valueOf(a);
+                byte[] b = new byte[]{(byte)(a)};
+                tok = new String(b, StandardCharsets.US_ASCII);
             } else {
                 throw new IOException(badRead);
             }
@@ -66,6 +70,10 @@ public class MessageInput {
 
         if (hasMore()) {
             if((a = messageIn.read()) != -1) {
+                byte[] b = new byte[]{(byte)(a)};
+                String tok = new String(b, StandardCharsets.US_ASCII);
+                a = Integer.parseInt(tok);
+
                 return a;
             } else {
                 throw new IOException(badRead);
@@ -81,22 +89,13 @@ public class MessageInput {
      * @throws IOException if I/O problem
      * @throws BadAttributeValueException if parse or validation failure
      */
-    public String next4Tok() throws IOException, BadAttributeValueException {
+    public String next4Tok() throws IOException {
         String token = "";
-        int a;
-        int readDone = 0;
-        while (readDone != 4 && (a = messageIn.read()) != -1) {
-            if (a == '\n') {
-                readDone = 4;
-            }else {
-//                Checkout StringBuilder.append();
-                token += (char)a;
-                readDone++;
-            }
+
+        for(int i = 0; i < 4; i++) {
+            token += nextOct_str();
         }
-        if (token.isEmpty()) {
-            throw new BadAttributeValueException(emptyMessage, "MessageInput");
-        }
+
         return token;
     }
 
@@ -108,24 +107,24 @@ public class MessageInput {
      */
     public String getline() throws IOException, BadAttributeValueException {
         String line = "";
-        int a = -1;
+        int a;
         boolean readDone = false;
 
-        while (!readDone && (a = messageIn.read()) != -1) {
-            if (a == '\n') {
-                if (messageIn.read() != '\n') {
-                    throw new BadAttributeValueException
-                            (badFrame, "MessageInput");
-                }
-                readDone = true;
-            } else {
+        if(hasMore()) {
+            while (!readDone && (a = messageIn.read()) != -1) {
+                if (a == '\n') {
+                    if (messageIn.read() != '\n') {
+                        throw new BadAttributeValueException
+                                (badFrame, "MessageInput");
+                    }
+                    readDone = true;
+                } else {
 //                Checkout StringBuilder.append();
-                line += (char) a;
+                    line += (char) a;
+                }
             }
-        }
-
-        if (a == -1) {
-            throw new BadAttributeValueException(badFrame, "MessageInput");
+        } else {
+            throw new IOException("Empty input");
         }
 
         if (line.isEmpty()) {

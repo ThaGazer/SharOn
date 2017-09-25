@@ -73,7 +73,8 @@ public class Search extends Message {
         appendByteArr(encodedSearch, getID());
 
         /*adds message ttl and the Routing service to string*/
-        encodedSearch.append(getTtl()).append(getRoutingService());
+        encodedSearch.append(getTtl()).
+                append(getRoutingService().getServiceCode());
 
         /*adds message source address to string*/
         appendByteArr(encodedSearch, getSourceAddress());
@@ -81,9 +82,15 @@ public class Search extends Message {
         /*adds message destination address to string*/
         appendByteArr(encodedSearch, getDestinationAddress());
 
-        /*adds the payload length and the actual payload to string*/
-        encodedSearch.append(Integer.toUnsignedString(getPayloadLength())).
-                append(getSearchString());
+        /*adds two bytes of the payload length to the encoded message*/
+        encodedSearch.append((byte)(getPayloadLength() >>> 8));
+        encodedSearch.append((byte)getPayloadLength());
+
+        /*adds the actual search string to the encoded string*/
+        encodedSearch.append(getSearchString());
+
+        /*closes the frame with \n\n*/
+        encodedSearch.append("\n\n");
 
         /*writes out the encoded string*/
         out.writeStr(encodedSearch.substring(beginning));

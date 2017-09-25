@@ -9,6 +9,8 @@
 package sharon.serialization;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+
 import static sharon.serialization.Message.searchParameters.*;
 
 /**
@@ -299,8 +301,12 @@ public abstract class Message {
                 dataSize = 0;
         }
 
-        if(a.length != dataSize) {
-            String dataCheck = new String(a);
+        if(a.length == dataSize) {
+            String dataCheck = "";
+            for(byte bytes: a) {
+                dataCheck += bytes;
+            }
+
             return dataCheck.matches(alphaNum);
         } else {
             return false;
@@ -397,7 +403,7 @@ public abstract class Message {
                             destAddrHolder[i] = Byte.parseByte(a);
                         }
 
-                        setSourceAddress(destAddrHolder);
+                        setDestinationAddress(destAddrHolder);
                         break;
                     case PAYLOADLENGTH:
                         paraSize = searchParameters.PAYLOADLENGTH.getVal();
