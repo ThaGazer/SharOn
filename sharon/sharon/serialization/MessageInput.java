@@ -8,11 +8,10 @@
 
 package sharon.serialization;
 
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
 /**
@@ -87,7 +86,6 @@ public class MessageInput {
      * Returns the next token in the inputStream if possible
      * @return next word in stream
      * @throws IOException if I/O problem
-     * @throws BadAttributeValueException if parse or validation failure
      */
     public String next4Tok() throws IOException {
         String token = "";
@@ -102,7 +100,7 @@ public class MessageInput {
     /**
      * Returns the entire line in the inputStream
      * @return next line in the stream
-     * @throws IOException       if I/O problem
+     * @throws IOException if I/O problem
      * @throws BadAttributeValueException if parse or validation failure
      */
     public String getline() throws IOException, BadAttributeValueException {
@@ -127,7 +125,7 @@ public class MessageInput {
             throw new IOException("Empty input");
         }
 
-        if (line.isEmpty()) {
+        if(line.isEmpty()) {
             throw new BadAttributeValueException(emptyMessage, "MessageInput");
         }
         return line;

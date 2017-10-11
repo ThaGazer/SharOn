@@ -9,7 +9,6 @@
 package sharon.serialization;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 
 import static sharon.serialization.Message.searchParameters.*;
 

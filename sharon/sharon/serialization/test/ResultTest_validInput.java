@@ -10,16 +10,11 @@
 package sharon.serialization.test;
 
 import static org.junit.Assert.*;
-
-import com.sun.istack.internal.NotNull;
 import org.junit.Test;
-
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
-
 import sharon.serialization.*;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;

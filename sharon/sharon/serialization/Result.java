@@ -8,6 +8,8 @@
 
 package sharon.serialization;
 
+import javafx.util.Pair;
+
 import java.io.IOException;
 import java.util.Objects;
 
@@ -69,10 +71,11 @@ public class Result {
     private String getFileID_bytes() {
         byte[] resultBytes = new byte[4];
         StringBuilder resStr = new StringBuilder();
+        Long tmpId = fileId;
 
         for (int i = 3; i >= 0; i--) {
-            resultBytes[i] = (byte)(fileId & 0xFF);
-            fileId >>= 4;
+            resultBytes[i] = (byte)(tmpId & 0xFF);
+            tmpId >>= 4;
         }
 
         for (byte bytes : resultBytes) {
@@ -89,10 +92,11 @@ public class Result {
     private String getFileSize_bytes() {
         byte[] resultBytes = new byte[4];
         StringBuilder resStr = new StringBuilder();
+        Long tmpSize = fileSize;
 
         for (int i = 3; i >= 0; i--) {
-            resultBytes[i] = (byte)(fileSize & 0xFF);
-            fileSize >>= 4;
+            resultBytes[i] = (byte)(tmpSize & 0xFF);
+            tmpSize >>= 4;
         }
 
         for (byte bytes : resultBytes) {
@@ -130,7 +134,7 @@ public class Result {
      * Set file ID
      * @param id_Long new file ID
      */
-    private void setFileID(Long id_Long) throws BadAttributeValueException {
+    public void setFileID(Long id_Long) throws BadAttributeValueException {
         if (id_Long != null) {
             String id_Str = String.valueOf(id_Long);
             if (id_Str.matches(nums)) {
@@ -144,10 +148,10 @@ public class Result {
     }
 
     /**
-     * Set file ID
-     * @param id_Long new file ID
+     * Set file Size
+     * @param id_Long new file Size
      */
-    private void setFileSize(Long id_Long) throws BadAttributeValueException {
+    public void setFileSize(Long id_Long) throws BadAttributeValueException {
         if (id_Long != null) {
             String id_Str = String.valueOf(id_Long);
             if (id_Str.matches(nums)) {
@@ -165,9 +169,9 @@ public class Result {
      * @param name new file Name
      * @throws BadAttributeValueException if bad attribute value
      */
-    private void setFileName(String name) throws BadAttributeValueException{
+    public void setFileName(String name) throws BadAttributeValueException{
         if (name != null) {
-            if (name.matches(alphaNums)) {
+            if (name.matches(alphaNums) && !name.contains("\n")) {
                 fileName = name;
             } else {
                 throw new BadAttributeValueException(errMessage, Namestr);

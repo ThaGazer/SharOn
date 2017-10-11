@@ -46,8 +46,8 @@ public class MessageTest {
     @Parameterized.Parameters
     public static Collection<Object[]> list() {
         ArrayList<Object[]> a = new ArrayList<>();
-        //a.add(new Object[]{"1000000000000000110000011111011\n\n",
-        // "000000000000000", 1, 1, "00000", "11111"});
+        a.add(new Object[]{"1000000000000000110000011111011\n\n",
+         "000000000000000", 1, 1, "00000", "11111"});
         a.add(new Object[]{"200000000000000011000001111101180111100010001656667",
                 "0000000000000000", 1, 1, "00000", "11111"});
         return a;
