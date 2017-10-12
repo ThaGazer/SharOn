@@ -12,12 +12,10 @@ import sharon.serialization.*;
 
 import java.io.*;
 import java.net.Socket;
-import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
 
-import static java.lang.System.currentTimeMillis;
 import static java.lang.System.exit;
 
 public class Node {
@@ -34,7 +32,6 @@ public class Node {
 
     /*console output messages*/
     private static final String consoleGoodConnect = "Connection successful!";
-    private static final String consoleRejectConnect = "Connection rejected: ";
     private static final String consoleSearchRes = "Search response for: ";
     private static final String consoleDownloadHost = "Download host: ";
     
@@ -117,7 +114,7 @@ public class Node {
         InputStream in = soc.getInputStream();
 
         /*create the full init message*/
-        String initMessage = nodeInit + nodeProtocol + "\\n\\n";
+        String initMessage = nodeInit + nodeProtocol + "\n\n";
         
         /*writes the init message out the socket using the US_ASCII encoding*/
         System.out.println(initMessage);
@@ -131,15 +128,18 @@ public class Node {
 
         int totByte = 0;
         int bytesread;
-        byte[] message = "OK SharOn\\n\\n".getBytes();
+        byte[] message = "OK SharOn\n\n".getBytes();
         while(totByte < message.length) {
+            System.out.println("read");
             if((bytesread = in.read(message, totByte, message.length-totByte)) == -1) {
-
+                throw new IOException("end of stream");
             }
+            System.out.println("red");
             totByte += bytesread;
         }
-        String messageStr = new String(message);
 
+        String messageStr = new String(message);
+        System.out.println(messageStr);
         String[] msgParts = messageStr.split("\\s|\\n");
         if(frameCheck(messageStr)) {
             if(operationOK.equals(msgParts[0])) {
@@ -202,10 +202,10 @@ public class Node {
 
         try {
             while (scn.hasNext()) {
-                        /*reads */
+                /*reads next line from user*/
                 String search = scn.nextLine();
 
-                        /*creates the search message to send*/
+                /*creates the search message to send*/
                 Message searchMessage = new Search
                         (toByteArray(Math.random()), 100,
                                 RoutingService.BREADTHFIRSTBROADCAST,
@@ -213,7 +213,7 @@ public class Node {
 
                 searchMessage.encode(out); //sends search request out
 
-                        /*reads in response if it is a response message*/
+                /*reads in response if it is a response message*/
                 Message responseMessage = Message.decode(in);
                 if(responseMessage.getMessageType() == 0x02) {
                     System.out.println(consoleSearchRes + search);
