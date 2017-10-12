@@ -167,7 +167,7 @@ public abstract class Message {
         if(byteCheck(id, attriID)) {
             messageID = id;
         } else {
-            throw new BadAttributeValueException(attriID, dataCheck);
+            throw new BadAttributeValueException(attriID, new String(id));
         }
     }
 
@@ -188,7 +188,8 @@ public abstract class Message {
         if(intCheck(ttl)) {
             messageTtl = ttl;
         } else {
-            throw new BadAttributeValueException(attriTtl, dataCheck);
+            throw new BadAttributeValueException
+                    (attriTtl, Integer.toString(ttl));
         }
     }
 

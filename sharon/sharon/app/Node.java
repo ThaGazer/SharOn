@@ -15,6 +15,8 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.util.*;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -24,12 +26,12 @@ public class Node {
 
     /*the command line parameters format*/
     private static final String cmdFormat = 
-            "Parameter(s): <Server> <Port> <filePath>";
+            "Parameter(s): <Server> <Port> <filePath>\n";
 
     /*the clients command options*/
     private static final String clientCmdFormat = "Usage: connect <address> " +
             "<port> / download <address> <port> <file ID> <file name> / " +
-            "exit / <search string>";
+            "exit / <search string>\n";
     
     /*error messaging*/
     private static final String errorSocketClosed = "Connection closed early: ";
@@ -38,7 +40,8 @@ public class Node {
     private static final String errorFNF = "File not found!";
 
     /*console output messages*/
-    private static final String consoleGoodConnect = "Connection successful!";
+    private static final String consoleGoodConnect = "Connection successful!\n";
+    private static final String consoleCloseNode = "Shutting down Node";
 
     /*operations of the returned handshake/for string checking*/
     private static final String operationOK = "OK";
@@ -74,10 +77,13 @@ public class Node {
     private static List<Thread> threadArr;
     private static List<Integer> searchArr;
 
+    //private static Logger logger;
+
     public Node() {
-        socketArr = new ArrayList<>();
-        threadArr = new ArrayList<>();
-        searchArr = new ArrayList<>();
+
+
+        /*init logger for server*/
+        //logger = Logger.getLogger("practical");
     }
 
     /**
@@ -85,6 +91,9 @@ public class Node {
      * @param args the command line parameters passed to the method
      */
     public static void main(String[] args) {
+        socketArr = new ArrayList<>();
+        threadArr = new ArrayList<>();
+        searchArr = new ArrayList<>();
 
         //testing for # of args
         if(args.length == 0) {
@@ -98,46 +107,43 @@ public class Node {
         /*Creating server socket connection using command line parameters*/
         try(ServerSocket servSoc = new ServerSocket(serverPortNumber)) {
 
-            /*init logger for server*/
             Logger logger = Logger.getLogger("practical");
 
+            Executor service = Executors.newCachedThreadPool();
             /*server thread pool creation*/
-
-            for (int i = 0; i < THREADPOOL; i++) {
-                Thread thread = new Thread(() -> {
-                    while (true) {
-                        try {
-                            Socket clntServer = servSoc.accept();
-                            serverThread(clntServer, logger);
-                        } catch (IOException e) {
-                            logger.log(Level.WARNING,
-                                    "server accept failed", e);
-                        }
+            Thread serverThread = new Thread(() -> {
+                while (true) {
+                    try {
+                        Socket clntServer = servSoc.accept();
+                        socketArr.add(clntServer);
+                        service.execute(new ServerService(clntServer, logger));
+                    } catch (IOException e) {
+                        logger.log(Level.WARNING,
+                                "server accept failed", e);
                     }
-                });
-                thread.start();
-            }
-
-            if (servonlyStart) {
-                Scanner scn = new Scanner(System.in);
-
-                String cmdParams = scn.nextLine();
-                String[] cmdParts = cmdParams.split("\\s");
-                if ((args.length < 3) || (args.length > 3)) {
-                    throw new IllegalArgumentException(cmdFormat);
                 }
-                paramCheck(cmdParts);
-            }
+            });
+            serverThread.start();
+        } catch(IOException e) {
+            System.out.println(errorSocketClosed + e.getMessage());
+        }
 
-            try (Socket socket = new Socket(nodeAddr, nodePort)) {
-                if(protocolHandShake(socket)) {
-                    socketArr.add(socket);
-                    clientHanlder(socket);
-                }
-            } catch(IOException e) {
-                System.out.println(errorSocketClosed + e.getMessage());
-            }
+        if (servonlyStart) {
+            Scanner scn = new Scanner(System.in);
 
+            String cmdParams = scn.nextLine();
+            String[] cmdParts = cmdParams.split("\\s");
+            if ((args.length < 3) || (args.length > 3)) {
+                throw new IllegalArgumentException(cmdFormat);
+            }
+            paramCheck(cmdParts);
+        }
+
+        try (Socket socket = new Socket(nodeAddr, nodePort)) {
+            if(protocolHandShake(socket)) {
+                socketArr.add(socket);
+                clientHandler(socket);
+            }
         } catch(IOException e) {
             System.out.println(errorSocketClosed + e.getMessage());
         }
@@ -168,15 +174,41 @@ public class Node {
     }
 
     /**
+     * Checks if the Node send the correct packets framing
+     * @param msg the message from the Node
+     * @return if the message passed the frame check
+     */
+    public static boolean frameCheck(String msg) {
+        String[] msgParts = msg.split("\\s|\\n");
+        String op = msgParts[0];
+
+        switch(op) {
+            case operationOK:
+                return msgParts.length == 2;
+            case operationREJECT:
+                return msgParts.length >= 3;
+            default: return false;
+        }
+    }
+
+    public static boolean cmdFormatCheck(String[] a) {
+        switch(a[0].toLowerCase()) {
+            case operationEXIT:
+                return a.length == 1;
+            case operationConnect:
+                return a.length == 3;
+            case operationDownload:
+                return a.length == 5;
+        }
+        return false;
+    }
+
+    /**
      * handles the Node handshake for connecting to other nodes 
      * @param soc the socket of the Node's connection
      * @throws IOException if socket read/write exception
      */
     public static boolean protocolHandShake(Socket soc) throws IOException {
-/*        BufferedReader in = new BufferedReader(new InputStreamReader
-                (soc.getInputStream(), StandardCharsets.US_ASCII));
-        OutputStreamWriter out = new OutputStreamWriter(soc.getOutputStream(), StandardCharsets.US_ASCII);*/
-
         InputStream in = soc.getInputStream();
         OutputStream out = soc.getOutputStream();
 
@@ -184,21 +216,22 @@ public class Node {
         String initMessage = nodeInit + nodeProtocol + "\n\n";
         
         /*writes the init message out the socket using the US_ASCII encoding*/
-        System.out.println(initMessage);
+        System.out.println(initMessage.substring(0, initMessage.length()-2));
         out.write(initMessage.getBytes());
 
         int totByte = 0;
         int bytesread;
         byte[] message = "OK SharOn\n\n".getBytes();
         while(totByte < message.length) {
-            if((bytesread = in.read(message, totByte, message.length-totByte)) == -1) {
+            if((bytesread = in.read
+                    (message, totByte, message.length-totByte)) == -1) {
                 throw new IOException("end of stream");
             }
             totByte += bytesread;
         }
 
         String messageStr = new String(message);
-        System.out.println(messageStr);
+        System.out.println(messageStr.substring(0, messageStr.length()-2));
         String[] msgParts = messageStr.split("\\s|\\n");
         if(frameCheck(messageStr)) {
             if(operationOK.equals(msgParts[0])) {
@@ -214,68 +247,49 @@ public class Node {
     }
 
     /**
-     * acts as the nodes server side handling search request
-     * @param soc the socket connected to
-     * @param logger allows for server event/error logging
-     * @throws IOException if messageInput creation fails
-     */
-    private static void serverThread(Socket soc, Logger logger)
-            throws IOException {
-        throw new IOException("you tried and failed");
-    }
-
-    /**
      * runs the client side operations of the Node
      * @param soc the socket connection to the other node
      * @throws IOException if I/o problems
      */
-    public static void clientHanlder(Socket soc) throws IOException {
+    public static void clientHandler(Socket soc) throws IOException {
         Scanner scn = new Scanner(System.in);
 
         try {
             while (scn.hasNext()) {
                 /*reads next line from user*/
                 String command = scn.nextLine();
-                System.out.println(command);
 
                 String[] cmdParts = command.split("\\s");
-                if(cmdParts.length == 1) {
-                    if(operationEXIT.equals(cmdParts[1].toLowerCase())) {
+                if(operationEXIT.equals(cmdParts[0].toLowerCase())) {
+                    if(cmdFormatCheck(cmdParts)) {
+                        System.out.println(consoleCloseNode);
                         soc.close();
                         exit(0);
                     } else {
-                        /*search message creation*/
-                        searchHandler(command);
-
+                        System.out.println(clientCmdFormat);
                     }
-                } else if(operationConnect.equals(cmdParts[0])) {
-                    connectHandler(cmdParts);
-                } else if(operationDownload.equals(cmdParts[0])) {
-                    downloadHandle(cmdParts);
+                } else if(operationConnect.equals(cmdParts[0].toLowerCase())) {
+                    if(cmdFormatCheck(cmdParts)) {
+                        connectHandler(cmdParts);
+                    } else {
+                        System.out.println(clientCmdFormat);
+                    }
+                } else if(operationDownload.equals(cmdParts[0].toLowerCase())) {
+                    if(cmdFormatCheck(cmdParts)) {
+                        downloadHandle(cmdParts);
+                    } else {
+                        System.out.println(clientCmdFormat);
+                    }
                 } else {
-                    System.out.println(clientCmdFormat);
+                    searchHandler(command);
                 }
             }
-        } catch(BadAttributeValueException e) {
-            System.out.println(errorLocClient + errorCreation + e.getMessage());
-        }
-    }
-
-    /**
-     * Checks if the Node send the correct packets framing
-     * @param msg the message from the Node
-     * @return if the message passed the frame check
-     */
-    public static boolean frameCheck(String msg) {
-        String[] msgParts = msg.split("\\s|\\n");
-        String op = msgParts[0];
-
-        switch(op) {
-            case operationOK:
-                return msgParts.length == 2;
-            case operationREJECT:
-                return msgParts.length >= 3;
-            default: return false;
+        } catch(IOException ioE) {
+            System.out.println
+                    (errorLocClient + ioE.getMessage());
+        } catch(BadAttributeValueException baveE) {
+            System.out.println(errorLocClient + errorCreation +
+                    baveE.getMessage() + baveE.getAttributeName());
         }
     }
 
@@ -322,8 +336,15 @@ public class Node {
      * @return the double converted to a byte array
      */
     public static byte[] toByteArray(double value) {
-        byte[] bytes = new byte[8];
-        ByteBuffer.wrap(bytes).putDouble(value);
-        return bytes;
+        return ByteBuffer.allocate(8).putDouble(value).array();
+    }
+
+    /**
+     * turns a int into a byte array
+     * @param value the int to turn into a byte array
+     * @return the int converted to a byte array
+     */
+    public static byte[] toByteArray(int value) {
+        return ByteBuffer.allocate(4).putInt(value).array();
     }
 }
