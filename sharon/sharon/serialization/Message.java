@@ -153,6 +153,7 @@ public abstract class Message {
      * Get message id
      * @return message id
      */
+    /*throw .clone()*/
     public byte[] getID() {
         return messageID;
     }
