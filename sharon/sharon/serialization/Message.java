@@ -9,6 +9,8 @@
 package sharon.serialization;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 import static sharon.serialization.Message.searchParameters.*;
 
@@ -107,6 +109,7 @@ public abstract class Message {
         setRoutingService(routingService);
         setSourceAddress(sourceSharOnAddress);
         setDestinationAddress(destinationSharOnAddress);
+        setPayloadLength(0);
     }
 
     /**
@@ -155,7 +158,7 @@ public abstract class Message {
      */
     /*throw .clone()*/
     public byte[] getID() {
-        return messageID;
+        return messageID.clone();
     }
 
     /**
@@ -167,7 +170,9 @@ public abstract class Message {
         if(byteCheck(id, attriID)) {
             messageID = id;
         } else {
-            throw new BadAttributeValueException(attriID, new String(id));
+            throw new BadAttributeValueException(attriID,
+                    String.valueOf(ByteBuffer.wrap(id).
+                            order(ByteOrder.LITTLE_ENDIAN).getInt()));
         }
     }
 
@@ -302,16 +307,7 @@ public abstract class Message {
                 dataSize = 0;
         }
 
-        if(a.length == dataSize) {
-            String dataCheck = "";
-            for(byte bytes: a) {
-                dataCheck += bytes;
-            }
-
-            return dataCheck.matches(alphaNum);
-        } else {
-            return false;
-        }
+        return a.length == dataSize;
     }
 
     /**
@@ -319,7 +315,7 @@ public abstract class Message {
      * @param a integer to check
      * @return if the check pass or fails
      */
-    public boolean intCheck(Integer a) {
+    protected boolean intCheck(Integer a) {
         if(a != null) {
             String intData = String.valueOf(a);
             if(intData.matches(numerics)) {

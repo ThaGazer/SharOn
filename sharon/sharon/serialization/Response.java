@@ -238,6 +238,7 @@ public class Response extends Message {
     public void addResult(Result result) throws BadAttributeValueException {
         if(!(result == null)) {
             messageResList.add(result);
+            setPayloadLength(getPayloadLength()+1);
         }
         else {
             throw new BadAttributeValueException

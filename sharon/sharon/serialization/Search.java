@@ -116,7 +116,7 @@ public class Search extends Message {
      */
     public void setSearchString(String searchString)
             throws BadAttributeValueException{
-        if(!searchString.isEmpty()) {
+        if(!" ".equals(searchString)) {
             searchStr = searchString;
         } else {
             throw new BadAttributeValueException
