@@ -28,12 +28,13 @@ public class MessageTest {
     private RoutingService messageRoutServ;
     private String xpectMsg;
 
-    public MessageTest(String xpect, String id, int ttl, String routServ,
-                       String srcAddr, String destAddr) {
+    public MessageTest(String xpect, String id, int ttl, int routServ,
+                       String srcAddr, String destAddr)
+            throws BadAttributeValueException {
         xpectMsg = xpect;
         messageId = id.getBytes();
         messageTtl = ttl;
-        messageRoutServ = RoutingService.valueOf(routServ);
+        messageRoutServ = RoutingService.getRoutingService(routServ);
         messageSrcAddr = srcAddr.getBytes();
         messageDestAddr = destAddr.getBytes();
     }
@@ -45,8 +46,10 @@ public class MessageTest {
     @Parameterized.Parameters
     public static Collection<Object[]> list() {
         ArrayList<Object[]> a = new ArrayList<>();
-        a.add(new Object[]{"01234567891234560000010002000\n\n", "123", 0,
-                "DEPTHFIRSTSEARCH", "sourceAddr", "destAddr"});
+        a.add(new Object[]{"1000000000000000110000011111011\n\n",
+         "000000000000000", 1, 1, "00000", "11111"});
+        a.add(new Object[]{"200000000000000011000001111101180111100010001656667",
+                "0000000000000000", 1, 1, "00000", "11111"});
         return a;
     }
 

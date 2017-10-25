@@ -24,6 +24,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 
+/**
+ * Run Result Class with incorrect input
+ */
 @RunWith(Parameterized.class)
 public class ResultTest_invalidInput {
 
@@ -70,13 +73,12 @@ public class ResultTest_invalidInput {
     public static Collection<Object[]> Badlist() {
         ArrayList<Object[]> a = new ArrayList<>();
         a.add(new Object[]{"", null, null, ""});
-        a.add(new Object[]{"00010001bob\n\n", "001", "0001", "bob"});
         a.add(new Object[]{"00010001bob\n\n", "", "0001", "bob"});
         a.add(new Object[]{"00010001bob\n\n", "0001", "", "bob"});
         a.add(new Object[]{"00010001bob\n\n", "0001", "0001", ""});
-        a.add(new Object[]{"00010001bob\n\n", "0001", "00001", "bob"});
-        a.add(new Object[]{"00010001bob\n\n", "00001", "0001", "bob"});
         a.add(new Object[]{"00010001bob\n\n", "0001", "0001", "bob\n"});
+        a.add(new Object[]{"00010001bob\n\n", "0001\n", "0001", "bob"});
+        a.add(new Object[]{"00010001bob\n\n", "0001", "0001\n", "bob"});
 
         return a;
     }

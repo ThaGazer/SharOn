@@ -11,6 +11,7 @@ package sharon.serialization;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Serialization output source for messages
@@ -25,7 +26,7 @@ public class MessageOutput {
      */
     public MessageOutput(OutputStream out) throws NullPointerException {
         if(out != null) {
-            messageOut = new OutputStreamWriter(out);
+            messageOut = new OutputStreamWriter(out, StandardCharsets.US_ASCII);
         } else {
             throw new NullPointerException();
         }

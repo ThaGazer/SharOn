@@ -9,6 +9,9 @@
 package sharon.serialization;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+
 import static sharon.serialization.Message.searchParameters.*;
 
 /**
@@ -106,6 +109,7 @@ public abstract class Message {
         setRoutingService(routingService);
         setSourceAddress(sourceSharOnAddress);
         setDestinationAddress(destinationSharOnAddress);
+        setPayloadLength(0);
     }
 
     /**
@@ -152,8 +156,9 @@ public abstract class Message {
      * Get message id
      * @return message id
      */
+    /*throw .clone()*/
     public byte[] getID() {
-        return messageID;
+        return messageID.clone();
     }
 
     /**
@@ -165,7 +170,9 @@ public abstract class Message {
         if(byteCheck(id, attriID)) {
             messageID = id;
         } else {
-            throw new BadAttributeValueException(attriID, dataCheck);
+            throw new BadAttributeValueException(attriID,
+                    String.valueOf(ByteBuffer.wrap(id).
+                            order(ByteOrder.LITTLE_ENDIAN).getInt()));
         }
     }
 
@@ -186,7 +193,8 @@ public abstract class Message {
         if(intCheck(ttl)) {
             messageTtl = ttl;
         } else {
-            throw new BadAttributeValueException(attriTtl, dataCheck);
+            throw new BadAttributeValueException
+                    (attriTtl, Integer.toString(ttl));
         }
     }
 
@@ -299,12 +307,7 @@ public abstract class Message {
                 dataSize = 0;
         }
 
-        if(a.length != dataSize) {
-            String dataCheck = new String(a);
-            return dataCheck.matches(alphaNum);
-        } else {
-            return false;
-        }
+        return a.length == dataSize;
     }
 
     /**
@@ -312,7 +315,7 @@ public abstract class Message {
      * @param a integer to check
      * @return if the check pass or fails
      */
-    public boolean intCheck(Integer a) {
+    protected boolean intCheck(Integer a) {
         if(a != null) {
             String intData = String.valueOf(a);
             if(intData.matches(numerics)) {
@@ -397,7 +400,7 @@ public abstract class Message {
                             destAddrHolder[i] = Byte.parseByte(a);
                         }
 
-                        setSourceAddress(destAddrHolder);
+                        setDestinationAddress(destAddrHolder);
                         break;
                     case PAYLOADLENGTH:
                         paraSize = searchParameters.PAYLOADLENGTH.getVal();
