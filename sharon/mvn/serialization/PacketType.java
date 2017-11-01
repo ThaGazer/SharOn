@@ -1,3 +1,10 @@
+/*
+ * PacketTest
+ * Version 1.0 created 10/24/2017
+ *
+ * Authors:
+ * -Justin Ritter
+ */
 package mvn.serialization;
 
 import java.io.Serializable;
@@ -7,18 +14,16 @@ import java.io.Serializable;
  * Created by Justin Ritter on 10/24/2017.
  */
 public enum PacketType implements Serializable, Comparable<PacketType> {
-    ANSERREQUEST("Answer to request"), CLEARCACHE(""), MAVENADDITIONS("Add mavens"), MAVENDELETIONS("Delete Mavens"),
-    NODEADDITIONS("Add nodes"), NODEDELETIONS("Delete nodes"), REQUESTMAVENS("Request mavens"),
-    REQUESTNODES("Request nodes");
-
-    private String packettype;
+    ANSWERREQUEST("Answer to request"), CLEARCACHE(""),
+    MAVENADDITIONS("Add mavens"), MAVENDELETIONS("Delete Mavens"),
+    NODEADDITIONS("Add nodes"), NODEDELETIONS("Delete nodes"),
+    REQUESTMAVENS("Request mavens"), REQUESTNODES("Request nodes");
 
     /**
      * creates a new packet type
      * @param s string to assign to enum
      */
     PacketType(String s) {
-        packettype = s;
     }
 
     /**
@@ -29,7 +34,7 @@ public enum PacketType implements Serializable, Comparable<PacketType> {
     public static PacketType getByCmd(String cmd) {
         switch(cmd.toLowerCase()) {
             case "ar":
-                return ANSERREQUEST;
+                return ANSWERREQUEST;
             case "ma":
                 return MAVENADDITIONS;
             case "md":
@@ -42,8 +47,10 @@ public enum PacketType implements Serializable, Comparable<PacketType> {
                 return REQUESTMAVENS;
             case "rn":
                 return REQUESTNODES;
-            default:
+            case "":
                 return CLEARCACHE;
+            default:
+                return null;
         }
     }
 
@@ -55,7 +62,7 @@ public enum PacketType implements Serializable, Comparable<PacketType> {
     public static PacketType getByCode(int code) {
         switch(code) {
             case 0:
-                return ANSERREQUEST;
+                return ANSWERREQUEST;
             case 1:
                 return MAVENADDITIONS;
             case 2:
@@ -68,8 +75,10 @@ public enum PacketType implements Serializable, Comparable<PacketType> {
                 return REQUESTMAVENS;
             case 6:
                 return REQUESTNODES;
-            default:
+            case 7:
                 return CLEARCACHE;
+            default:
+                return null;
         }
     }
 
@@ -79,7 +88,7 @@ public enum PacketType implements Serializable, Comparable<PacketType> {
      */
     public String getCmd() {
         switch(this) {
-            case ANSERREQUEST:
+            case ANSWERREQUEST:
                 return "AR";
             case MAVENADDITIONS:
                 return "MA";
@@ -93,8 +102,10 @@ public enum PacketType implements Serializable, Comparable<PacketType> {
                 return "RM";
             case REQUESTNODES:
                 return "RN";
-            default:
+            case CLEARCACHE:
                 return "";
+            default:
+                return null;
         }
     }
 
@@ -104,7 +115,7 @@ public enum PacketType implements Serializable, Comparable<PacketType> {
      */
     public int getCode() {
         switch(this) {
-            case ANSERREQUEST:
+            case ANSWERREQUEST:
                 return 0;
             case MAVENADDITIONS:
                 return 1;
@@ -118,8 +129,10 @@ public enum PacketType implements Serializable, Comparable<PacketType> {
                 return 5;
             case REQUESTNODES:
                 return 6;
-            default:
+            case CLEARCACHE:
                 return 7;
+            default:
+                return -1;
         }
     }
 

@@ -1,3 +1,10 @@
+/*
+ * ErrorType
+ * Version 1.0 created 10/25/2017
+ *
+ * Authors:
+ * -Justin Ritter
+ */
 package mvn.serialization;
 
 import java.io.Serializable;
@@ -46,7 +53,7 @@ public enum ErrorType implements Serializable, Comparable<ErrorType> {
             case SYSTEM:
                 return 2;
             default:
-                return 3;
+                return -1;
         }
     }
 }

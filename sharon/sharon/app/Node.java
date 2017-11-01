@@ -60,9 +60,6 @@ public class Node {
     /*number of executor thread to have available*/
     private static final int EXECUTETHREADCOUNT = 4;
 
-    private static final String logFileLoc = "C:\\SharonLogs";
-    private static final String logFName = "log.txt";
-
     /*the port number of the server for the node*/
     private static final Integer serverPortNumber = 2112;
     private static final Integer downloadPortNumber = 1968;
