@@ -1,6 +1,6 @@
 /*
  * ErrorType
- * Version 1.0 created 10/25/2017
+ * Version 1.1 created 10/25/2017
  *
  * Authors:
  * -Justin Ritter
@@ -10,14 +10,17 @@ package mvn.serialization;
 import java.io.Serializable;
 
 /**
- * Project: SharOn
- * Created by Justin Ritter on 10/24/2017.
+ * MVN error type
  */
 public enum ErrorType implements Serializable, Comparable<ErrorType> {
     INCORRECTPACKET("Unexpected packet type"), NONE("No error"), SYSTEM("System error");
 
     private String errortype = "";
 
+    /**
+     * creates a new error type
+     * @param s string to assign to enum
+     */
     ErrorType(String s) {
         errortype = s;
     }

@@ -1,6 +1,6 @@
 /*
  * PacketTest
- * Version 1.0 created 10/24/2017
+ * Version 1.1 created 10/24/2017
  *
  * Authors:
  * -Justin Ritter
@@ -10,8 +10,7 @@ package mvn.serialization;
 import java.io.Serializable;
 
 /**
- * Project: SharOn
- * Created by Justin Ritter on 10/24/2017.
+ * MVN message type
  */
 public enum PacketType implements Serializable, Comparable<PacketType> {
     ANSWERREQUEST("Answer to request"), CLEARCACHE(""),
@@ -135,5 +134,4 @@ public enum PacketType implements Serializable, Comparable<PacketType> {
                 return -1;
         }
     }
-
 }

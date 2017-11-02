@@ -1,7 +1,14 @@
-package mvn.serialization;
+/*
+ * ClientCommand
+ * Version 1.0 created 10/31/2017
+ *
+ * Authors:
+ * -Justin Ritter
+ */
+package mvn.app;
 
 /**
- * Created by Justin Ritter on 11/1/2017.
+ * commands that a user can use on the client side of a maven
  */
 public enum ClientCommand {
     REQUESTNODE("rn"), REQUESTMAVEN("rm"), NODEADDITION("na"),
@@ -9,10 +16,19 @@ public enum ClientCommand {
 
     private String commandName;
 
+    /**
+     * creates new client command
+     * @param s string to assign to enum
+     */
     ClientCommand(String s) {
         commandName = s;
     }
 
+    /**
+     * Get type for given command
+     * @param cmd command to find type of
+     * @return command corresponding to code or null if bad command
+     */
     public static ClientCommand getByCmd(String cmd) {
         switch(cmd.toLowerCase()) {
             case "ma":
@@ -34,6 +50,10 @@ public enum ClientCommand {
         }
     }
 
+    /**
+     * get command for type
+     * @return type of command
+     */
     public String getCmd() {
         return commandName;
     }

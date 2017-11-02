@@ -1,6 +1,6 @@
 /*
  * Packet
- * Version 1.0 created 10/24/2017
+ * Version 1.1 created 10/24/2017
  *
  * Authors:
  * -Justin Ritter
@@ -14,8 +14,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Project: SharOn
- * Created by Justin Ritter on 10/24/2017.
+ * Represents MVN message
+ * Version: 1.1
  */
 public class Packet {
 
@@ -27,10 +27,13 @@ public class Packet {
 
     /*error messages*/
     private static final String errorFrameOff = "incorrect frame";
-    private static final String errorSetSession = "setSession()";
+    private static final String errorSetSession = "sessionID";
     private static final String errorSetVersion = "version";
     private static final String errorSetType = "PacketType";
     private static final String errorSetError = "ErrorType";
+    private static final String errorNullAddress = "Null address";
+    private static final String errorMaxAddresses = "Reached max allowed addresses";
+
 
     /*the version of protocol running*/
     private static final Integer pVersion = 4;
@@ -51,9 +54,9 @@ public class Packet {
      * Construct new packet from byte array
      * @param buf buffer containing encoded packet
      * @throws IOException if byte array too long/short or buf is null
-     * @throws IllegalAccessException if bad attribute value
+     * @throws IllegalArgumentException if bad attribute value
      */
-    public Packet(byte[] buf) throws IOException, IllegalAccessException {
+    public Packet(byte[] buf) throws IOException, IllegalArgumentException {
         pAddress = new HashSet<>(ADDRESSALLOWEDSIZE);
         int bufLoc = 0;
 
@@ -121,11 +124,11 @@ public class Packet {
      * @param type type of message
      * @param error error type (if any) of message
      * @param sessionID session ID of message
-     * @throws IllegalAccessException if bad attribute value given.
+     * @throws IllegalArgumentException if bad attribute value given.
      * Note that only an Answer Request may have a non-zero error.
      */
     public Packet(PacketType type, ErrorType error, int sessionID)
-            throws IllegalAccessException {
+            throws IllegalArgumentException {
         pAddress = new HashSet<>();
         pType = type;
         pError = error;
@@ -143,7 +146,15 @@ public class Packet {
      */
     public void addAddress(InetSocketAddress newAddress)
             throws IllegalArgumentException {
-        pAddress.add(newAddress);
+        if(newAddress != null) {
+            if(pAddress.size() < ADDRESSALLOWEDSIZE) {
+                pAddress.add(newAddress);
+            } else {
+                throw new IllegalArgumentException(errorMaxAddresses);
+            }
+        } else {
+            throw new IllegalArgumentException(errorNullAddress);
+        }
     }
 
     /**
@@ -264,6 +275,14 @@ public class Packet {
         } else {
             throw new IllegalArgumentException(errorSetSession);
         }
+    }
+
+    /**
+     * the number of bytes in the packet
+     * @return the size of the packet
+     */
+    public int size() {
+        return HEADERSIZE + (pAddress.size()*8);
     }
 
     /**
