@@ -8,6 +8,7 @@
 package mvn.serialization;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.HashSet;
@@ -19,8 +20,8 @@ import java.util.Set;
  */
 public class Packet {
 
-    /*is the header size of the packet*/
-    private static final Integer HEADERSIZE = 32;
+    /*is the header size of the packet in bytes*/
+    private static final Integer HEADERSIZE = 4;
 
     /*total amount of addresses allowed*/
     private static final Integer ADDRESSALLOWEDSIZE = 255;
@@ -32,11 +33,12 @@ public class Packet {
     private static final String errorSetType = "PacketType";
     private static final String errorSetError = "ErrorType";
     private static final String errorNullAddress = "Null address";
-    private static final String errorMaxAddresses = "Reached max allowed addresses";
+    private static final String errorMaxAddresses =
+            "Reached max allowed addresses";
 
 
     /*the version of protocol running*/
-    private static final Integer pVersion = 4;
+    private static final int pVersion = 4;
 
     /*storing addresses for maven node*/
     private static Set<InetSocketAddress> pAddress;
@@ -48,7 +50,7 @@ public class Packet {
     private static ErrorType pError;
 
     /*used to map server responses to outstanding request*/
-    private static Integer pSession;
+    private static int pSession;
 
     /**
      * Construct new packet from byte array
@@ -62,9 +64,9 @@ public class Packet {
 
         try {
             /*checks is versions are the same*/
-            /*if ((buf[bufLoc] & 0xF0) != pVersion) {
+            if ((buf[bufLoc] >>> 4) != pVersion) {
                 throw new IllegalArgumentException(errorSetVersion);
-            }*/
+            }
 
             /*assigns the packet type*/
             if ((pType = PacketType.getByCode(buf[bufLoc] & 0x0F)) == null) {
@@ -103,15 +105,17 @@ public class Packet {
 
                 /*reads next port*/
                 for(int j = 0; j < 2; j++, bufLoc++) {
-                    bPort[i] = buf[bufLoc];
+                    bPort[j] = buf[bufLoc];
                 }
 
-                /*converts port into an int*/
+                /*creates address from bytes*/
+                InetAddress iAddr = InetAddress.getByAddress(addressName);
+
+                /*creates port from bytes*/
                 int iPort = bPort[0] << 8 | bPort[1];
 
                 /*creates and adds new InetSocketAddess*/
-                addAddress(new InetSocketAddress(
-                        new String(addressName), iPort));
+                addAddress(new InetSocketAddress(iAddr, iPort));
             }
 
         } catch(ArrayIndexOutOfBoundsException e) {
@@ -139,7 +143,7 @@ public class Packet {
      * Add new address
      * @param newAddress new address to add.
      * If the Packet already contains the given address,
-     *                   the list of addresses remains unchanged.
+     * the list of addresses remains unchanged.
      * @throws IllegalArgumentException if newAddress is null,
      * this type of MVN packet does not have addresses,
      * or if too many addresses
@@ -169,28 +173,26 @@ public class Packet {
         /*will hold complete encoded Packet*/
         ByteBuffer encodPacket = ByteBuffer.allocate(packetSize);
 
-        /*encodes the version*/
-        encodPacket.put((byte)(pVersion & 0xFF));
-
-        /*encodes the packet type*/
-        encodPacket.put((byte)(pType.getCode() & 0xFF));
+        /*encodes packet version and type*/
+        byte firstByte = (byte)(pVersion << 4 | pType.getCode());
+        encodPacket.put(firstByte);
 
         /*encodes the error type*/
-        encodPacket.putInt(pError.getCode());
+        encodPacket.put((byte)pError.getCode());
 
         /*encodes the session number*/
-        encodPacket.putInt(pSession);
+        encodPacket.put((byte)pSession);
 
         /*encodes the amount of addresses in the list*/
-        encodPacket.putInt(pAddress.size());
+        encodPacket.put((byte)pAddress.size());
 
         /*encodes all address from list*/
         for(InetSocketAddress addr : pAddress) {
 
             /*gets hsot name and port. removes all . from address*/
-            encodPacket.put(addr.getHostName().
-                    replaceAll("\\.", "").getBytes());
-            encodPacket.put((byte)(addr.getPort() & 0xFF));
+            encodPacket.put(addr.getAddress().getAddress());
+            encodPacket.put((byte)(addr.getPort() & 0xFF00));
+            encodPacket.put((byte)(addr.getPort() & 0x00FF));
         }
 
         return encodPacket.array();
@@ -206,7 +208,7 @@ public class Packet {
             return false;
         }
         Packet pack = (Packet)obj;
-        return pSession.equals(pack.getSessionID()) &&
+        return pSession == pack.getSessionID() &&
                 pType.equals(pack.getType()) && pError.equals(pack.getError())
                 && pAddress.equals(pack.getAddrList());
     }
@@ -258,7 +260,7 @@ public class Packet {
         /*computes hash for every attribute. if attribute is null hash it to 0*/
         hash = aPrime * hash + ((pType == null) ? 0 : pType.hashCode());
         hash = aPrime * hash + ((pError == null) ? 0 : pError.hashCode());
-        hash = aPrime * hash + ((pSession == null) ? 0 : pSession.hashCode());
+        hash = aPrime * hash + Integer.hashCode(pSession);
         hash = aPrime * hash + ((pAddress == null) ? 0 : pAddress.hashCode());
         return hash;
     }

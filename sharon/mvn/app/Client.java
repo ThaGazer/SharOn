@@ -25,6 +25,7 @@ public class Client {
     //useful constant numbers
     private static final int TIMEOUT = 3000; //resend timeout
     private static final int MAXTRIES = 3; //maximum retransmissions
+    private static final int MAXPACKETSIZE = 1572; //maximum size of a Packet
     private static final int OPERATION_ENDIDX = 2; //the end index of the operation for client commands
     private static int SESSIONID = 0;
 
@@ -228,7 +229,7 @@ public class Client {
         DatagramPacket sendPacket = new DatagramPacket //datagram packet for sending
                 (bytesToSend, bytesToSend.length, new InetSocketAddress(servName,servPort));
         /*datagram packet for reading*/
-        DatagramPacket receivePacket = new DatagramPacket(new byte[bytesToSend.length], bytesToSend.length);
+        DatagramPacket receivePacket = new DatagramPacket(new byte[MAXPACKETSIZE], MAXPACKETSIZE);
 
         int tries = 0; //number of tries so far
         boolean receivedResponse = false; //if a response is received

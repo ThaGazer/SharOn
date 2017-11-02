@@ -12,15 +12,12 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collection;
 
-/**
- * Created by Justin Ritter on 10/26/2017.
- */
+
 @RunWith(Parameterized.class)
 public class PacketTest {
 
@@ -32,9 +29,9 @@ public class PacketTest {
 
     /**
      * constructs a new Packet using a list of parameter buffers
-     * @param bufferIn
-     * @throws IOException
-     * @throws IllegalAccessException
+     * @param bufferIn the stream of data that should decoded into a Packet
+     * @throws IOException reading issues
+     * @throws IllegalAccessException incorrect Packet formatting
      */
     public PacketTest(byte[] bufferIn)
             throws IOException, IllegalAccessException {
@@ -91,9 +88,10 @@ public class PacketTest {
     public void addAddressTest() {
         InetSocketAddress newr =
                 new InetSocketAddress("nextHost", 1234);
-
+        int preSize = testerP.getAddrList().size();
         testerP.addAddress(newr);
-        Assert.assertTrue(testerP.getAddrList().size() == 2);
+        Assert.assertTrue
+                ((preSize + 1) == testerP.getAddrList().size());
     }
 
     /**
