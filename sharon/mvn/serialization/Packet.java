@@ -166,12 +166,8 @@ public class Packet {
      * @return encoded message byte array
      */
     public byte[] encode() {
-
-        /*the total packet size*/
-        int packetSize = HEADERSIZE + (pAddress.size() * 6);
-
         /*will hold complete encoded Packet*/
-        ByteBuffer encodPacket = ByteBuffer.allocate(packetSize);
+        ByteBuffer encodPacket = ByteBuffer.allocate(size());
 
         /*encodes packet version and type*/
         byte firstByte = (byte)(pVersion << 4 | pType.getCode());
@@ -284,7 +280,7 @@ public class Packet {
      * @return the size of the packet
      */
     public int size() {
-        return HEADERSIZE + (pAddress.size()*8);
+        return HEADERSIZE + (pAddress.size()*6);
     }
 
     /**

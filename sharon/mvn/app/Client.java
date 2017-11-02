@@ -103,25 +103,25 @@ public class Client {
                         switch (clientOP) {
                             case MAVENADDITION:
                                 /*builds and sends a maven addition packet to server*/
-                                if (!buildPacket(PacketType.MAVENADDITIONS, clientCmd)) {
+                                if (!buildPacket(PacketType.MavenAdditions, clientCmd)) {
                                     System.err.println(USAGEMA);
                                 }
                                 break;
                             case MAVENDELETION:
                                 /*builds and sends a maven deletion packet to server*/
-                                if (!buildPacket(PacketType.MAVENDELETIONS, clientCmd)) {
+                                if (!buildPacket(PacketType.MavenDeletions, clientCmd)) {
                                     System.err.println(USAGEMD);
                                 }
                                 break;
                             case NODEADDITION:
                                 /*builds and sends a node addition packet to server*/
-                                if (!buildPacket(PacketType.NODEADDITIONS, clientCmd)) {
+                                if (!buildPacket(PacketType.NodeAdditions, clientCmd)) {
                                     System.err.println(USAGENA);
                                 }
                                 break;
                             case NODEDELETION:
                                 /*builds and sends a node deletion packet to server*/
-                                if (!buildPacket(PacketType.NODEDELETIONS, clientCmd)) {
+                                if (!buildPacket(PacketType.NodeDeletions, clientCmd)) {
                                     System.err.println(USAGEND);
                                 }
                                 break;
@@ -131,7 +131,7 @@ public class Client {
                                     System.err.println(UNEXPECTEDARG + USAGERM);
                                 } else {
                                     /*sends a request maven packet and processes received packet*/
-                                    requestPacket(PacketType.REQUESTMAVENS);
+                                    requestPacket(PacketType.RequestMavens);
                                 }
                                 break;
                             case REQUESTNODE:
@@ -140,7 +140,7 @@ public class Client {
                                     System.err.println(UNEXPECTEDARG + USAGERN);
                                 } else {
                                     /*sends a request node packet and processes received packet*/
-                                    requestPacket(PacketType.REQUESTNODES);
+                                    requestPacket(PacketType.RequestNodes);
                                 }
                                 break;
                             case EXIT:
@@ -185,7 +185,7 @@ public class Client {
      */
     private static boolean buildPacket(PacketType type, String command) throws IOException {
         /*creates a new packet for sending*/
-        Packet pack = new Packet(type, ErrorType.NONE, SESSIONID);
+        Packet pack = new Packet(type, ErrorType.None, SESSIONID);
         String[] cmdSplit = command.split("\\s"); //splits user command to get parameters
 
         if(cmdSplit.length > 1) {
@@ -222,7 +222,7 @@ public class Client {
      * @throws IOException problem with sending or receiving packets
      */
     private static void requestPacket(PacketType type) throws IOException {
-        Packet sPack = new Packet(type, ErrorType.NONE, SESSIONID); //packet for sending
+        Packet sPack = new Packet(type, ErrorType.None, SESSIONID); //packet for sending
         Packet rPack = null; //packet for reading
         byte[] bytesToSend = sPack.encode();
 
@@ -243,7 +243,7 @@ public class Client {
 
                 if(!receivePacket.getAddress().equals(servName)) { //check if packet come from server
                     throw new IOException(errorUnknownSource);
-                } else if(rPack.getType() != PacketType.ANSWERREQUEST) { //check if packet is of right type
+                } else if(rPack.getType() != PacketType.AnswerRequest) { //check if packet is of right type
                     tries += 1;
                     System.out.println(messageUnexpectedType);
                 } else if (rPack.getSessionID() != 0 || rPack.getSessionID() != SESSIONID) { //check if right session id

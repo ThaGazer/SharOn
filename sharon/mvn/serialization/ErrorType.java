@@ -15,6 +15,10 @@ import java.io.Serializable;
 public enum ErrorType implements Serializable, Comparable<ErrorType> {
     INCORRECTPACKET(20), NONE(0), SYSTEM(10);
 
+    public static final ErrorType None = NONE;
+    public static final ErrorType System = SYSTEM;
+    public static final ErrorType IncorrectPacket = INCORRECTPACKET;
+
     private int errorType;
 
     /**
@@ -33,11 +37,11 @@ public enum ErrorType implements Serializable, Comparable<ErrorType> {
     public static ErrorType getByCode(int code) {
         switch (code) {
             case 20:
-                return ErrorType.INCORRECTPACKET;
+                return IncorrectPacket;
             case 0:
-                return ErrorType.NONE;
+                return None;
             case 10:
-                return ErrorType.SYSTEM;
+                return System;
             default:
                 return null;
         }

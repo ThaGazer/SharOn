@@ -18,6 +18,15 @@ public enum PacketType implements Serializable, Comparable<PacketType> {
     NODEADDITIONS(3, "NA"), NODEDELETIONS(5, "ND"),
     REQUESTMAVENS(1, "RM"), REQUESTNODES(0, "RN");
 
+    public static final PacketType AnswerRequest = ANSWERREQUEST;
+    public static final PacketType ClearCache = CLEARCACHE;
+    public static final PacketType MavenAdditions = MAVENADDITIONS;
+    public static final PacketType MavenDeletions = MAVENDELETIONS;
+    public static final PacketType NodeAdditions = NODEADDITIONS;
+    public static final PacketType NodeDeletions = NODEDELETIONS;
+    public static final PacketType RequestMavens = REQUESTMAVENS;
+    public static final PacketType RequestNodes = REQUESTNODES;
+
     private int code;
     private String cmd;
 
@@ -38,21 +47,21 @@ public enum PacketType implements Serializable, Comparable<PacketType> {
     public static PacketType getByCmd(String cmd) {
         switch(cmd.toLowerCase()) {
             case "ar":
-                return ANSWERREQUEST;
+                return AnswerRequest;
             case "ma":
-                return MAVENADDITIONS;
+                return MavenAdditions;
             case "md":
-                return MAVENDELETIONS;
+                return MavenDeletions;
             case "na":
-                return NODEADDITIONS;
+                return NodeAdditions;
             case "nd":
-                return NODEDELETIONS;
+                return NodeDeletions;
             case "rm":
-                return REQUESTMAVENS;
+                return RequestMavens;
             case "rn":
-                return REQUESTNODES;
+                return RequestNodes;
             case "":
-                return CLEARCACHE;
+                return ClearCache;
             default:
                 return null;
         }
@@ -66,21 +75,21 @@ public enum PacketType implements Serializable, Comparable<PacketType> {
     public static PacketType getByCode(int code) {
         switch(code) {
             case 2:
-                return ANSWERREQUEST;
+                return AnswerRequest;
             case 4:
-                return MAVENADDITIONS;
+                return MavenAdditions;
             case 6:
-                return MAVENDELETIONS;
+                return MavenDeletions;
             case 3:
-                return NODEADDITIONS;
+                return NodeAdditions;
             case 5:
-                return NODEDELETIONS;
+                return NodeDeletions;
             case 1:
-                return REQUESTMAVENS;
+                return RequestMavens;
             case 0:
-                return REQUESTNODES;
+                return RequestNodes;
             case 7:
-                return CLEARCACHE;
+                return ClearCache;
             default:
                 return null;
         }
