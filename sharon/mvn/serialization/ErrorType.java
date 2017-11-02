@@ -13,16 +13,16 @@ import java.io.Serializable;
  * MVN error type
  */
 public enum ErrorType implements Serializable, Comparable<ErrorType> {
-    INCORRECTPACKET("Unexpected packet type"), NONE("No error"), SYSTEM("System error");
+    INCORRECTPACKET(20), NONE(0), SYSTEM(10);
 
-    private String errortype = "";
+    private int errorType;
 
     /**
      * creates a new error type
-     * @param s string to assign to enum
+     * @param i integer to assign to enum
      */
-    ErrorType(String s) {
-        errortype = s;
+    ErrorType(int i) {
+        errorType = i;
     }
 
     /**
@@ -32,11 +32,11 @@ public enum ErrorType implements Serializable, Comparable<ErrorType> {
      */
     public static ErrorType getByCode(int code) {
         switch (code) {
-            case 0:
+            case 20:
                 return ErrorType.INCORRECTPACKET;
-            case 1:
+            case 0:
                 return ErrorType.NONE;
-            case 2:
+            case 10:
                 return ErrorType.SYSTEM;
             default:
                 return null;
@@ -48,15 +48,6 @@ public enum ErrorType implements Serializable, Comparable<ErrorType> {
      * @return error code
      */
     public int getCode() {
-        switch(this) {
-            case INCORRECTPACKET:
-                return 0;
-            case NONE:
-                return 1;
-            case SYSTEM:
-                return 2;
-            default:
-                return -1;
-        }
+        return errorType;
     }
 }
