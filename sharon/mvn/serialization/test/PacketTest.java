@@ -48,11 +48,12 @@ public class PacketTest {
         ArrayList<Object[]> a = new ArrayList<>();
         a.add(new Object[]{new byte[]{(byte)0x40, (byte)0x00, (byte)0x24,
                 (byte)0x01, (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00,
-                (byte)0x00, (byte)0x01}});
+                (byte)0xFF, (byte)0x01}});
         a.add(new Object[]{new byte[]{(byte)0x41, (byte)0x00, (byte)0x25,
                 (byte)0x02, (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00,
                 (byte)0x00, (byte)0x01, (byte)0x00 , (byte)0x00, (byte)0x00,
                 (byte)0x01, (byte)0x00, (byte)0x01}});
+        a.add(new Object[]{null});
         return a;
     }
 

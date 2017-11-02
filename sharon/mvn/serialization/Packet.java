@@ -24,7 +24,7 @@ public class Packet {
     private static final Integer HEADERSIZE = 4;
 
     /*total amount of addresses allowed*/
-    private static final Integer ADDRESSALLOWEDSIZE = 255;
+    private static final Integer ADDRESSALLOWEDSIZE = 256;
 
     /*error messages*/
     private static final String errorFrameOff = "incorrect frame";
@@ -32,7 +32,8 @@ public class Packet {
     private static final String errorSetVersion = "version";
     private static final String errorSetType = "PacketType";
     private static final String errorSetError = "ErrorType";
-    private static final String errorNullAddress = "Null address";
+    private static final String errorNullObj = "Null object";
+    private static final String errorAddAddress = "Add address";
     private static final String errorMaxAddresses =
             "Reached max allowed addresses";
 
@@ -59,67 +60,78 @@ public class Packet {
      * @throws IllegalArgumentException if bad attribute value
      */
     public Packet(byte[] buf) throws IOException, IllegalArgumentException {
-        pAddress = new HashSet<>(ADDRESSALLOWEDSIZE);
-        int bufLoc = 0;
+        if(buf != null) {
+            pAddress = new HashSet<>(ADDRESSALLOWEDSIZE);
+            int bufLoc = 0;
 
-        try {
-            /*checks is versions are the same*/
-            if ((buf[bufLoc] >>> 4) != pVersion) {
-                throw new IllegalArgumentException(errorSetVersion);
-            }
+            if (buf.length > 0) {
+                try {
+                    /*checks is versions are the same*/
+                    if ((buf[bufLoc] >>> 4) != pVersion) {
+                        throw new IllegalArgumentException(errorSetVersion);
+                    }
 
-            /*assigns the packet type*/
-            if ((pType = PacketType.getByCode(buf[bufLoc] & 0x0F)) == null) {
-                throw new IllegalArgumentException(errorSetType);
-            }
-            bufLoc++;
+                    /*assigns the packet type*/
+                    if ((pType = PacketType.getByCode(buf[bufLoc] & 0x0F)) == null) {
+                        throw new IllegalArgumentException(errorSetType);
+                    }
+                    bufLoc++;
 
-            /*assigns the error type*/
-            if ((pError = ErrorType.getByCode(buf[bufLoc] & 0xFF)) == null) {
-                throw new IllegalArgumentException(errorSetError);
-            }
-            bufLoc++;
+                    /*assigns the error type*/
+                    if ((pError = ErrorType.getByCode(buf[bufLoc] & 0xFF)) == null) {
+                        throw new IllegalArgumentException(errorSetError);
+                    }
+                    bufLoc++;
 
-            /*assigns session number*/
-            pSession = buf[bufLoc] & 0xFF;
-            bufLoc++;
+                    /*assigns session number*/
+                    pSession = buf[bufLoc] & 0xFF;
+                    bufLoc++;
 
-            /*reads size of address list*/
-            int count = buf[bufLoc] & 0xFF;
-            bufLoc++;
+                    /*reads size of address list*/
+                    int count = buf[bufLoc] & 0xFF;
+                    bufLoc++;
 
-            /*reads for however many address where specified in count*/
-            for(int i = 0; i < count; i++) {
+                    if((pType == PacketType.RequestNodes || pType == PacketType.RequestMavens) && count > 0) {
+                        throw new IllegalArgumentException(errorAddAddress);
+                    }
 
-                /*will hold address of new InetSocketAddress*/
-                byte[] addressName = new byte[4];
+                    /*reads for however many address where specified in count*/
+                    for (int i = 0; i < count; i++) {
 
-                /*will hold port of new InetSocketAddress*/
-                byte[] bPort = new byte[2];
+                        /*will hold address of new InetSocketAddress*/
+                        byte[] addressName = new byte[4];
+
+                        /*will hold port of new InetSocketAddress*/
+                        byte[] bPort = new byte[2];
 
 
-                /*reads next address*/
-                for(int j = 0; j < 4; j++, bufLoc++) {
-                    addressName[i] = buf[bufLoc];
+                        /*reads next address*/
+                        for (int j = 0; j < 4; j++, bufLoc++) {
+                            addressName[i] = buf[bufLoc];
+                        }
+
+                        /*reads next port*/
+                        for (int j = 0; j < 2; j++, bufLoc++) {
+                            bPort[j] = buf[bufLoc];
+                        }
+
+                        /*creates address from bytes*/
+                        InetAddress iAddr = InetAddress.getByAddress(addressName);
+
+                        /*creates port from bytes*/
+                        int iPort = bPort[0] << 8 | bPort[1];
+
+                        /*creates and adds new InetSocketAddress*/
+                        addAddress(new InetSocketAddress(iAddr, (iPort & 0xFFFF)));
+                    }
+                } catch (ArrayIndexOutOfBoundsException e) {
+                    throw new IOException(errorFrameOff);
                 }
-
-                /*reads next port*/
-                for(int j = 0; j < 2; j++, bufLoc++) {
-                    bPort[j] = buf[bufLoc];
-                }
-
-                /*creates address from bytes*/
-                InetAddress iAddr = InetAddress.getByAddress(addressName);
-
-                /*creates port from bytes*/
-                int iPort = bPort[0] << 8 | bPort[1];
-
-                /*creates and adds new InetSocketAddess*/
-                addAddress(new InetSocketAddress(iAddr, iPort));
+            } else {
+                throw new IOException(errorNullObj);
             }
-
-        } catch(ArrayIndexOutOfBoundsException e) {
-            throw new IOException(errorFrameOff);
+        } else {
+            throw new IOException(errorNullObj);
         }
     }
 
@@ -134,8 +146,8 @@ public class Packet {
     public Packet(PacketType type, ErrorType error, int sessionID)
             throws IllegalArgumentException {
         pAddress = new HashSet<>();
-        pType = type;
-        pError = error;
+        setType(type);
+        setError(error);
         setSessionID(sessionID);
     }
 
@@ -151,13 +163,16 @@ public class Packet {
     public void addAddress(InetSocketAddress newAddress)
             throws IllegalArgumentException {
         if(newAddress != null) {
+            if((pType == PacketType.RequestMavens || pType == PacketType.RequestNodes)) {
+                throw new IllegalArgumentException(errorAddAddress);
+            }
             if(pAddress.size() < ADDRESSALLOWEDSIZE) {
                 pAddress.add(newAddress);
             } else {
                 throw new IllegalArgumentException(errorMaxAddresses);
             }
         } else {
-            throw new IllegalArgumentException(errorNullAddress);
+            throw new IllegalArgumentException(errorNullObj);
         }
     }
 
@@ -185,10 +200,10 @@ public class Packet {
         /*encodes all address from list*/
         for(InetSocketAddress addr : pAddress) {
 
-            /*gets hsot name and port. removes all . from address*/
+            /*gets host name and port. removes all "." from address*/
             encodPacket.put(addr.getAddress().getAddress());
-            encodPacket.put((byte)(addr.getPort() & 0xFF00));
-            encodPacket.put((byte)(addr.getPort() & 0x00FF));
+            encodPacket.put((byte)((addr.getPort() & 0xFF00) >>> 8));
+            encodPacket.put((byte) (addr.getPort() & 0x00FF));
         }
 
         return encodPacket.array();
@@ -241,6 +256,37 @@ public class Packet {
         return pType;
     }
 
+    private void setType(PacketType p) {
+        if(p != null) {
+            pType = p;
+        } else {
+            throw new IllegalArgumentException(errorNullObj);
+        }
+    }
+
+    private void setError(ErrorType e) {
+        if(e != null) {
+            pError = e;
+        } else {
+            throw new IllegalArgumentException(errorNullObj);
+        }
+
+    }
+
+    /**
+     * Set session ID
+     * @param sessionID new session ID
+     * @throws IllegalArgumentException if sessionID invalid
+     */
+    public void setSessionID(int sessionID)
+            throws IllegalArgumentException {
+        if(sessionID >= 0 && sessionID <= 255) {
+            pSession = sessionID;
+        } else {
+            throw new IllegalArgumentException(errorSetSession);
+        }
+    }
+
     /**
      * Must override to satisfy contract
      * @return hashCode in class java.lang.Object
@@ -257,23 +303,13 @@ public class Packet {
         hash = aPrime * hash + ((pType == null) ? 0 : pType.hashCode());
         hash = aPrime * hash + ((pError == null) ? 0 : pError.hashCode());
         hash = aPrime * hash + Integer.hashCode(pSession);
-        hash = aPrime * hash + ((pAddress == null) ? 0 : pAddress.hashCode());
+
+        for(InetSocketAddress a : pAddress) {
+            hash = aPrime * hash + ((a == null) ? 0 : a.hashCode());
+        }
         return hash;
     }
 
-    /**
-     * Set session ID
-     * @param sessionID new session ID
-     * @throws IllegalArgumentException if sessionID invalid
-     */
-    public void setSessionID(Integer sessionID)
-            throws IllegalArgumentException {
-        if(sessionID != null) {
-            pSession = sessionID;
-        } else {
-            throw new IllegalArgumentException(errorSetSession);
-        }
-    }
 
     /**
      * the number of bytes in the packet

@@ -45,26 +45,27 @@ public enum PacketType implements Serializable, Comparable<PacketType> {
      * @return cmd corresponding to code or null if bad cmd
      */
     public static PacketType getByCmd(String cmd) {
-        switch(cmd.toLowerCase()) {
-            case "ar":
-                return AnswerRequest;
-            case "ma":
-                return MavenAdditions;
-            case "md":
-                return MavenDeletions;
-            case "na":
-                return NodeAdditions;
-            case "nd":
-                return NodeDeletions;
-            case "rm":
-                return RequestMavens;
-            case "rn":
-                return RequestNodes;
-            case "":
-                return ClearCache;
-            default:
-                return null;
+        if(cmd != null) {
+            switch (cmd.toUpperCase()) {
+                case "AR":
+                    return AnswerRequest;
+                case "MA":
+                    return MavenAdditions;
+                case "MD":
+                    return MavenDeletions;
+                case "NA":
+                    return NodeAdditions;
+                case "ND":
+                    return NodeDeletions;
+                case "RM":
+                    return RequestMavens;
+                case "RN":
+                    return RequestNodes;
+                default:
+                    return null;
+            }
         }
+        return null;
     }
 
     /**
