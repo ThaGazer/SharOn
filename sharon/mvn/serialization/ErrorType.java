@@ -13,7 +13,7 @@ import java.io.Serializable;
  * MVN error type
  */
 public enum ErrorType implements Serializable, Comparable<ErrorType> {
-    INCORRECTPACKET(20), NONE(0), SYSTEM(10);
+    INCORRECTPACKET(2), NONE(0), SYSTEM(1);
 
     public static final ErrorType None = NONE;
     public static final ErrorType System = SYSTEM;
@@ -36,11 +36,11 @@ public enum ErrorType implements Serializable, Comparable<ErrorType> {
      */
     public static ErrorType getByCode(int code) {
         switch (code) {
-            case 20:
+            case 2:
                 return IncorrectPacket;
             case 0:
                 return None;
-            case 10:
+            case 1:
                 return System;
             default:
                 return null;

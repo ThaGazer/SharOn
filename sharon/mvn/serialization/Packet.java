@@ -34,6 +34,7 @@ public class Packet {
     private static final String errorSetError = "ErrorType";
     private static final String errorNullObj = "Null object";
     private static final String errorAddAddress = "Add address";
+    private static final String errorUnresovled = "Unresolved address";
     private static final String errorMaxAddresses =
             "Reached max allowed addresses";
 
@@ -72,13 +73,15 @@ public class Packet {
                     }
 
                     /*assigns the packet type*/
-                    if ((pType = PacketType.getByCode(buf[bufLoc] & 0x0F)) == null) {
+                    if ((pType = PacketType.getByCode(buf[bufLoc] & 0x0F)) ==
+                            null) {
                         throw new IllegalArgumentException(errorSetType);
                     }
                     bufLoc++;
 
                     /*assigns the error type*/
-                    if ((pError = ErrorType.getByCode(buf[bufLoc] & 0xFF)) == null) {
+                    if ((pError = ErrorType.getByCode(buf[bufLoc] & 0xFF)) ==
+                            null) {
                         throw new IllegalArgumentException(errorSetError);
                     }
                     bufLoc++;
@@ -91,7 +94,8 @@ public class Packet {
                     int count = buf[bufLoc] & 0xFF;
                     bufLoc++;
 
-                    if((pType == PacketType.RequestNodes || pType == PacketType.RequestMavens) && count > 0) {
+                    if((pType == PacketType.RequestNodes ||
+                            pType == PacketType.RequestMavens) && count > 0) {
                         throw new IllegalArgumentException(errorAddAddress);
                     }
 
@@ -107,25 +111,27 @@ public class Packet {
 
                         /*reads next address*/
                         for (int j = 0; j < 4; j++, bufLoc++) {
-                            addressName[i] = buf[bufLoc];
+                            addressName[j] = (byte)(buf[bufLoc] & 0xFF);
                         }
 
                         /*reads next port*/
                         for (int j = 0; j < 2; j++, bufLoc++) {
-                            bPort[j] = buf[bufLoc];
+                            bPort[j] = (buf[bufLoc]);
                         }
 
                         /*creates address from bytes*/
-                        InetAddress iAddr = InetAddress.getByAddress(addressName);
+                        InetAddress iAddr =
+                                InetAddress.getByAddress(addressName);
 
                         /*creates port from bytes*/
-                        int iPort = bPort[0] << 8 | bPort[1];
+                        int iPort = (bPort[0] & 0xFF) << 8 | (bPort[1] & 0xFF);
 
                         /*creates and adds new InetSocketAddress*/
-                        addAddress(new InetSocketAddress(iAddr, (iPort & 0xFFFF)));
+                        addAddress(new InetSocketAddress(iAddr,
+                                iPort));
                     }
                 } catch (ArrayIndexOutOfBoundsException e) {
-                    throw new IOException(errorFrameOff);
+                    throw new IOException(errorFrameOff + " " + e.getMessage());
                 }
             } else {
                 throw new IOException(errorNullObj);
@@ -162,8 +168,9 @@ public class Packet {
      */
     public void addAddress(InetSocketAddress newAddress)
             throws IllegalArgumentException {
-        if(newAddress != null) {
-            if((pType == PacketType.RequestMavens || pType == PacketType.RequestNodes)) {
+        if(newAddress != null && !newAddress.isUnresolved()) {
+            if((pType == PacketType.RequestMavens ||
+                    pType == PacketType.RequestNodes)) {
                 throw new IllegalArgumentException(errorAddAddress);
             }
             if(pAddress.size() < ADDRESSALLOWEDSIZE) {
@@ -171,8 +178,10 @@ public class Packet {
             } else {
                 throw new IllegalArgumentException(errorMaxAddresses);
             }
-        } else {
+        } else if(newAddress == null) {
             throw new IllegalArgumentException(errorNullObj);
+        } else {
+            throw new IllegalArgumentException(errorUnresovled);
         }
     }
 
@@ -201,11 +210,11 @@ public class Packet {
         for(InetSocketAddress addr : pAddress) {
 
             /*gets host name and port. removes all "." from address*/
-            encodPacket.put(addr.getAddress().getAddress());
-            encodPacket.put((byte)((addr.getPort() & 0xFF00) >>> 8));
+            encodPacket.put((addr.getAddress() == null) ? (new byte[] {}) :
+                    addr.getAddress().getAddress());
+            encodPacket.put((byte) ((addr.getPort() & 0xFF00) >>> 8));
             encodPacket.put((byte) (addr.getPort() & 0x00FF));
         }
-
         return encodPacket.array();
     }
 
@@ -256,7 +265,7 @@ public class Packet {
         return pType;
     }
 
-    private void setType(PacketType p) {
+    public void setType(PacketType p) {
         if(p != null) {
             pType = p;
         } else {
@@ -264,7 +273,7 @@ public class Packet {
         }
     }
 
-    private void setError(ErrorType e) {
+    public void setError(ErrorType e) {
         if(e != null) {
             pError = e;
         } else {
@@ -285,6 +294,13 @@ public class Packet {
         } else {
             throw new IllegalArgumentException(errorSetSession);
         }
+    }
+
+    /**
+     * Clears the address list
+     */
+    public void clearAddress() {
+        pAddress.clear();
     }
 
     /**
