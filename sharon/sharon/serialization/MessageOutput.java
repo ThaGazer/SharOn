@@ -19,6 +19,7 @@ import java.nio.charset.StandardCharsets;
 public class MessageOutput {
 
     private OutputStreamWriter messageOut;
+    private OutputStream out;
 
     /**
      * Constructs a new output source from an OutputStream

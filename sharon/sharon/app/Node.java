@@ -9,7 +9,6 @@
 package sharon.app;
 
 import sharon.serialization.*;
-
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -26,45 +25,52 @@ import static java.lang.System.exit;
  */
 public class Node {
 
-    /*the command line parameters format*/
-    private static final String cmdFormat = 
-            "Parameter(s): <Server> <Port> <filePath>\n";
 
     /*the clients command options*/
-    private static final String clientCmdFormat = "Usage: connect <address> " +
-            "<port> / download <address> <port> <file ID> <file name> / " +
-            "exit / <search string>\n";
-    
+    private static final String usageConnect =
+            "Usage: connect <address> <port>";
+    private static final String usageDownload =
+            "Usage: download <address> <port> <file ID> <file name>";
+    private static final String usageExit = "Usage: exit";
+    private static final String usageSearch = "Usage: <search string>";
+
     /*error messaging*/
-    private static final String errorSocketClosed = "Connection closed early: ";
+    private static final String errorSocketClosed = "Connection closed early";
     private static final String errorIncorrectFrame = "Incorrect framing";
-    private static final String errorCreation = "Could not create message: ";
-    private static final String errorFNF = "File not found!";
+    private static final String errorFNF = "File/Folder not found!";
     private static final String errorServConnectFail = "server accept failed";
     private static final String errorCode301 = "301";
-
-    /*console output messages*/
-    private static final String consoleGoodConnect = "Connection successful!\n";
-    private static final String consoleCloseNode = "Shutting down Node";
-
-    /*operations of the returned handshake/for string checking*/
-    private static final String operationEXIT = "exit";
-    private static final String operationConnect = "connect";
-    private static final String operationDownload = "download";
-    private static final String errorLocClient = "Client side: ";
+    private static final String errorLocClient = "client side ";
+    private static final String errorServerFailed = "server side ";
     private static final String errorEOS = "end of stream";
 
-    /*current protocol*/
-    private static final String nodeProtocol = "1.0";
+    /*messages to either logger or user*/
+    private static final String msgCmdFormat =
+            "Parameter(s): <Server> <Port> <filePath>\n";
+    private static final String msgServerStart = "Starting this nodes server";
+    private static final String msgGoodConnect = "connection successful: ";
+    private static final String msgBadConnect = "connection failed: ";
+    private static final String msgCloseNode = "Shutting down Node";
+    private static final String msgCommandConfirm =
+            " is a key word, are you trying to search instead(y/n): ";
+    private static final String msgNoConnection =
+            "You are not connected to anyone";
+
 
     /*number of executor thread to have available*/
     private static final int EXECUTETHREADCOUNT = 4;
 
     /*the port number of the server for the node*/
-    private static final Integer serverPortNumber = 2112;
+    private static Integer serverPortNumber = 2112;
     private static final Integer downloadPortNumber = 1968;
 
-    /*the initial message for creating a node connection*/
+    /*name of teh logger file*/
+    private static final String LOGGERNAME = Node.class.getName();
+    private static final String LOGGERFNAME = "./node.log";
+    private static Logger logger = Logger.getLogger(LOGGERNAME);
+
+    /*message packets for the node protocol*/
+    private static final String nodeProtocol = "1.0";
     private static final String nodeInit =
             "INIT SharOn/" + nodeProtocol + "\n\n";
     private static final String nodeOK = "OK SharOn\n\n";
@@ -72,6 +78,10 @@ public class Node {
 
     /*check if node was started as a server only node*/
     private static boolean servonlyStart = false;
+
+    /*for determining which protocol version to use*/
+    private static final int protocolRec = 1;
+    private static final int protocolReq = 2;
 
     /*command parameters*/
     private static String nodeAddr;
@@ -86,7 +96,7 @@ public class Node {
      * runs a P2P connection between two Nodes
      * @param args the command line parameters passed to the method
      */
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         socketArr = new ArrayList<>();
         threadArr = new ArrayList<>();
         searchArr = new ArrayList<>();
@@ -94,39 +104,29 @@ public class Node {
         //testing for # of args
         if(args.length == 0) {
             servonlyStart = true;
-        } else if ((args.length < 3) || (args.length > 3)) {
-            throw new IllegalArgumentException(cmdFormat);
         } else {
-            paramCheck(args);
+            if(!paramCheck(args)) {
+                System.out.println(msgCmdFormat);
+                exit(-1);
+            }
         }
 
-        Logger logger = Logger.getLogger("practical");
+        /*set the logger information*/
+        setup_logger();
+
+        if(!servonlyStart) {
+            serverPortNumber += 1;
+            Socket startSoc = new Socket(nodeAddr, nodePort);
+            addConnection(startSoc, protocolReq);
+        }
 
         /*server thread pool creation*/
-        Thread serverThread = new Thread(() -> {
-        /*Creating server socket connection
-        using command line parameters*/
-            try (ServerSocket servSoc = new ServerSocket(serverPortNumber)) {
-                while (true) {
-                    Socket clntServer = servSoc.accept();
-                    if(protocolHandShakeReceived(clntServer)) {
-                        socketArr.add(clntServer);
-                        Thread thread = new Thread(
-                                new ServerService(clntServer, logger,
-                                        docPath, downloadPortNumber));
-                        threadArr.add(thread);
-                        thread.start();
-                    }
-                }
-            } catch (IOException e) {
-                logger.log(Level.WARNING, errorServConnectFail, e);
-                System.out.println(errorSocketClosed + e.getMessage());
-            }
-        });
-        threadArr.add(serverThread);
-        serverThread.start();
+        serverHandler();
 
-        Thread downloadThread = new Thread(() -> {
+        /*handles users request*/
+        clientHandler();
+
+        /*Thread downloadThread = new Thread(() -> {
             try (ServerSocket dwnLoadSoc =
                          new ServerSocket(downloadPortNumber)) {
                 dwnLoadSoc.setReuseAddress(true);
@@ -135,7 +135,8 @@ public class Node {
                 while (true) {
                     Socket dwnLoadClient = dwnLoadSoc.accept();
                     socketArr.add(dwnLoadClient);
-                    dwnloadService.execute(new downloadServiceHandler(dwnLoadClient, logger, docPath));
+                    dwnloadService.execute(new downloadServiceHandler
+                            (dwnLoadClient, logger, docPath));
 
                 }
             } catch (IOException e) {
@@ -143,27 +144,8 @@ public class Node {
             }
         });
         threadArr.add(downloadThread);
-        downloadThread.start();
+        downloadThread.start();*/
 
-        if (servonlyStart) {
-            Scanner scn = new Scanner(System.in);
-
-            String cmdParams = scn.nextLine();
-            String[] cmdParts = cmdParams.split("\\s");
-            if ((args.length < 3) || (args.length > 3)) {
-                throw new IllegalArgumentException(cmdFormat);
-            }
-            paramCheck(cmdParts);
-        }
-
-        try (Socket socket = new Socket(nodeAddr, nodePort)) {
-            if (protocolHandShakeRequest(socket)) {
-                socketArr.add(socket);
-                clientHandler(socket, logger);
-            }
-        } catch (IOException e) {
-            System.out.println(errorSocketClosed + e.getMessage());
-        }
 
         try {
             for(Thread t : threadArr) {
@@ -180,28 +162,57 @@ public class Node {
         }
     }
 
+    public static void addConnection(Socket soc, int version)
+            throws IOException {
+        boolean protocolRes;
+        switch(version) {
+            case 1:
+                protocolRes = protocolHandShakeReceived(soc);
+                break;
+            case 2:
+                protocolRes =protocolHandShakeRequest(soc);
+                break;
+            default:
+                protocolRes = false;
+        }
+
+        if(protocolRes) {
+            logger.info(msgGoodConnect + soc.getInetAddress());
+            //System.out.println(msgGoodConnect);
+            socketArr.add(soc);
+            Thread servThread = new Thread(new ServerService
+                    (soc, docPath, downloadPortNumber));
+            threadArr.add(servThread);
+            servThread.start();
+        } else {
+            logger.info(msgBadConnect + soc.getInetAddress());
+            soc.close();
+        }
+    }
+
     /**
      * checks the parameters passed in from consol
      * @param args parameters passed in
      */
-    public static void paramCheck(String[] args) {
+    public static boolean paramCheck(String[] args) {
+        if (args.length != 3) {
+            return false;
+        }
         nodeAddr = args[0]; //Nodes name or address
-            /*Nodes port number*/
-        nodePort = (args.length == 3) ? Integer.parseInt(args[1]) : 7;
 
-            /*the documents folder path*/
+        /*Nodes port number*/
+        nodePort = Integer.parseInt(args[1]);
+
+        /*the documents folder path*/
         docPath = args[2];
 
-            /*checking if the path exist*/
-        try {
-            File filePathing = new File(docPath);
-            if (!filePathing.exists()) {
-                throw new IOException(errorFNF);
-            }
-        } catch (IOException e) {
-            System.out.println(e.getMessage());
-            exit(0);
+        /*checking if the path exist*/
+        File filePathing = new File(docPath);
+        if (!filePathing.exists()) {
+            System.err.println(errorFNF);
+            exit(-1);
         }
+        return true;
     }
 
     /**
@@ -210,15 +221,19 @@ public class Node {
      * @return if it is a client command
      */
     public static boolean cmdFormatCheck(String[] a) {
-        switch(a[0].toLowerCase()) {
-            case operationEXIT:
+        ClientCommand cmd = ClientCommand.getByCmd(a[0].toLowerCase());
+        switch(cmd) {
+            case EXIT:
                 return a.length == 1;
-            case operationConnect:
+            case CONNECT:
                 return a.length == 3;
-            case operationDownload:
+            case DOWNLOAD:
                 return a.length == 5;
+            case SEARCH:
+                return true;
+            default:
+                return false;
         }
-        return false;
     }
 
     /**
@@ -227,16 +242,13 @@ public class Node {
      * @return protocol check
      * @throws IOException if socket read/write exception
      */
-    public static boolean protocolHandShakeRequest(Socket soc) throws IOException {
+    public static boolean protocolHandShakeRequest(Socket soc)
+            throws IOException {
         InputStream in = soc.getInputStream();
         OutputStream out = soc.getOutputStream();
-
-        /*create the full init message*/
-        String initMessage = nodeInit + nodeProtocol + "\n\n";
         
         /*writes the init message out the socket using the US_ASCII encoding*/
-        System.out.println(initMessage.substring(0, initMessage.length()-2));
-        out.write(initMessage.getBytes());
+        out.write(nodeInit.getBytes());
 
         int totByte = 0;
         int bytesread;
@@ -251,7 +263,6 @@ public class Node {
 
         String messageStr = new String(message);
         if(nodeOK.equals(messageStr)){
-            System.out.println(consoleGoodConnect);
             return true;
         } else {
             throw new IOException(messageStr);
@@ -269,11 +280,10 @@ public class Node {
         InputStream in = soc.getInputStream();
         OutputStream out = soc.getOutputStream();
 
-        String initMessage = nodeInit + nodeProtocol + "\n\n";
         int totbytes = 0;
         int bytesread;
-        byte[] message = initMessage.getBytes();
-        while(totbytes < initMessage.length()) {
+        byte[] message = nodeInit.getBytes();
+        while(totbytes < nodeInit.length()) {
             if((bytesread = in.read
                     (message, totbytes, message.length-totbytes)) == -1) {
                 throw new IOException(errorEOS);
@@ -282,64 +292,99 @@ public class Node {
         }
 
         String messageIn = new String(message);
-        if(initMessage.equals(messageIn)) {
+        if(nodeInit.equals(messageIn)) {
             out.write(nodeOK.getBytes());
             return true;
         } else {
-            throw new IOException(nodeReject + errorCode301 + errorIncorrectFrame);
+            throw new IOException
+                    (nodeReject + errorCode301 + errorIncorrectFrame);
         }
     }
 
     /**
      * runs the client side operations of the Node
-     * @param soc the socket connection to the other node
      * @throws IOException if I/o problems
      */
-    public static void clientHandler(Socket soc, Logger logger)
+    public static void clientHandler()
             throws IOException {
         BufferedReader scn = new BufferedReader
                 (new InputStreamReader(System.in));
 
-        try {
             String command;
-            String[] cmdParts = {""};
+            String[] cmdParts;
 
             /*reads next line from user*/
             while((command = scn.readLine()) != null) {
-                if (!"".equals(command)) {
+                try {
                     cmdParts = command.split("\\s");
-                }
-                if (operationEXIT.equals(cmdParts[0].toLowerCase())) {
-                    if (cmdFormatCheck(cmdParts)) {
-                        System.out.println(consoleCloseNode);
-                        soc.close();
-                        exit(0);
-                    } else {
-                        System.out.println(clientCmdFormat);
+                    ClientCommand cmd = ClientCommand.getByCmd(cmdParts[0]);
+                    switch(cmd) {
+                        case CONNECT:
+                            if(cmdFormatCheck(cmdParts)) {
+                               connectHandler(cmdParts);
+                            } else {
+                               System.out.println(cmdParts[0] +
+                                       msgCommandConfirm);
+                               String userResponse = scn.readLine();
+                               if(userResponse.charAt(0) == 'y') {
+                                   searchHandler(command);
+                               } else {
+                                   System.out.println(usageConnect);
+                               }
+                            }
+                           break;
+                        case DOWNLOAD:
+                            if(cmdFormatCheck(cmdParts)) {
+                                downloadHandler(cmdParts, logger);
+                            } else {
+                                System.out.println(cmdParts[0] +
+                                        msgCommandConfirm);
+                                String userResponse = scn.readLine();
+                                if(userResponse.charAt(0) == 'y') {
+                                    searchHandler(command);
+                                } else {
+                                    System.out.println(usageDownload);
+                                }
+                            }
+                           break;
+                        case SEARCH:
+                            searchHandler(command);
+                            break;
+                        case EXIT:
+                            System.out.println(msgCloseNode);
+                            exit(0);
                     }
-                } else if (operationConnect.equals(cmdParts[0].toLowerCase())) {
-                    if (cmdFormatCheck(cmdParts)) {
-                        connectHandler(cmdParts, logger);
-                    } else {
-                        System.out.println(clientCmdFormat);
-                    }
-                } else if (operationDownload.equals(cmdParts[0].toLowerCase())){
-                    if (cmdFormatCheck(cmdParts)) {
-                        downloadHandler(cmdParts, logger);
-                    } else {
-                        System.out.println(clientCmdFormat);
-                    }
-                } else {
-                    searchHandler(command);
+                } catch(IOException|BadAttributeValueException e) {
+                    logger.log(Level.WARNING, errorLocClient,
+                            e.fillInStackTrace());
                 }
             }
-        } catch(IOException ioE) {
-            System.out.println
-                    (errorLocClient + ioE.getMessage());
-        } catch(BadAttributeValueException baveE) {
-            System.out.println(errorLocClient + errorCreation +
-                    baveE.getMessage() + " " + baveE.getAttributeName());
-        }
+    }
+
+    /**
+     * runs the server side of the node
+     */
+    public static void serverHandler() {
+        /*server thread pool creation*/
+        Thread serverThread = new Thread(() -> {
+            logger.info(msgServerStart);
+            /*Creating server socket connection
+            using command line parameters*/
+            try(ServerSocket serverSoc = new ServerSocket(serverPortNumber)) {
+                while(true) {
+                    try {
+                        Socket clntServer = serverSoc.accept();
+                        addConnection(clntServer, protocolRec);
+                    } catch(IOException e) {
+                        logger.log(Level.WARNING, errorServerFailed, e);
+                    }
+                }
+            } catch(IOException e) {
+                logger.log(Level.SEVERE, errorSocketClosed, e);
+            }
+        });
+        threadArr.add(serverThread);
+        serverThread.start();
     }
 
     /**
@@ -350,41 +395,29 @@ public class Node {
      */
     public static void searchHandler(String searchStr)
             throws IOException, BadAttributeValueException {
-        Long searchID = new Random().nextLong();
-        byte[] id = toByteArray(searchID);
-
-        searchArr.add(searchID);
         Message searchMessage = new Search
-                (id, 1,
+                (nextID(), 1,
                         RoutingService.BREADTHFIRSTBROADCAST,
                         "00000".getBytes(), "00000".getBytes(),
                         searchStr);
-
         /*send search request to all nodes currently connected*/
-        for(Socket s : socketArr) {
-            searchMessage.encode(
-                    new MessageOutput(s.getOutputStream()));
+        if(!socketArr.isEmpty()) {
+            for(Socket s : socketArr) {
+                searchMessage.encode(
+                        new MessageOutput(s.getOutputStream()));
+            }
+        } else {
+            System.out.println(msgNoConnection);
         }
     }
 
     /**
      * handles making new connection
      * @param params connect commands
-     * @param logger logger
-     * @throws IOException
      */
-    public static void connectHandler(String[] params, Logger logger)
-            throws IOException {
+    public static void connectHandler(String[] params) throws IOException {
         Socket socket = new Socket(params[1], Integer.parseInt(params[2]));
-
-        if(protocolHandShakeRequest(socket)) {
-            socketArr.add(socket);
-
-            Thread clntConnectThread = new Thread(new ServerService
-                    (socket, logger, docPath, downloadPortNumber));
-            threadArr.add(clntConnectThread);
-            clntConnectThread.start();
-        }
+        addConnection(socket, protocolReq);
     }
 
     /**
@@ -403,11 +436,28 @@ public class Node {
     }
 
     /**
-     * turns a double into a byte array
-     * @param value the double to turn into a byte array
-     * @return the double converted to a byte array
+     * constructs the logger for the server
+     * @throws IOException could not find logging file
      */
-    public static byte[] toByteArray(long value) {
-        return ByteBuffer.allocate(15).putDouble(value).array();
+    private static void setup_logger() throws IOException {
+        LogManager.getLogManager().reset();
+
+        Handler fileHandle = new FileHandler(LOGGERFNAME);
+        Handler consoleHandle = new ConsoleHandler();
+
+        fileHandle.setLevel(Level.ALL);
+        consoleHandle.setLevel(Level.ALL);
+
+        logger.addHandler(fileHandle);
+        logger.addHandler(consoleHandle);
+    }
+
+    public static byte[] nextID() {
+        byte[] res = new byte[15];
+        for(int i = 0; i < 15; i++) {
+            res[i] = (byte) (new Random().
+                    nextInt() & 0x000000ff);
+        }
+        return res.clone();
     }
 }

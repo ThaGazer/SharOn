@@ -11,8 +11,9 @@ package sharon.serialization;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.Arrays;
 
-import static sharon.serialization.Message.searchParameters.*;
+import static sharon.serialization.Message.messageParameters.*;
 
 /**
  * Represents SharOn message
@@ -23,7 +24,7 @@ public abstract class Message {
      * a list of all the parameters of a Message object with corresponding
      * frame sizes
      */
-    public enum searchParameters {
+    public enum messageParameters {
         ID(15), TTL(1), ROUTINGSERVICE(1), SRCADDR(5),
         DESTADDR(5), PAYLOADLENGTH(2);
 
@@ -34,7 +35,7 @@ public abstract class Message {
          * to denotes the frame size of the corresponding parameter
          * @param a the frame size of the parameter
          */
-        searchParameters(int a) {
+        messageParameters(int a) {
             intVal = a;
         }
 
@@ -69,13 +70,13 @@ public abstract class Message {
     protected static final String attriDestAddr = "Destination Address";
     protected static final String attriDecode = "decode";
 
-    /*the size of a search frame minus the payload*/
-    protected Integer frameSize = ID.getVal() + TTL.getVal() +
+    /*the size of a message frame minus the actual payload*/
+    protected Integer frameSize = 1 + ID.getVal() + TTL.getVal() +
             ROUTINGSERVICE.getVal() + SRCADDR.getVal() +
             DESTADDR.getVal() + PAYLOADLENGTH.getVal();
 
     /*declares the starting position of the StringBuilder class*/
-    protected static final Integer beginning = 0;
+    protected static final int beginning = 0;
 
     protected byte[] messageID;
     protected int messageTtl;
@@ -88,9 +89,7 @@ public abstract class Message {
     /**
      * default constructor for compiling
      */
-    public Message() {
-
-    }
+    public Message() {}
 
     /**
      * Constructs base message with given values
@@ -129,19 +128,18 @@ public abstract class Message {
     public static Message decode(MessageInput in)
             throws IOException, BadAttributeValueException {
         if(in.hasMore()) {
-            String messageType = in.nextOct_str();
+            byte messageType = in.nextOct_byte();
             switch(messageType) {
-                //these are the wrong checks for sure
-                //right check?
-                case "1":
+                case 0x01:
                     return new Search(in);
-                case "2":
+                case 0x02:
                     return new Response(in);
                 default:
                     throw new BadAttributeValueException
                             (unknownOp, attriDecode);
             }
         } else {
+            in.getline();
             throw new BadAttributeValueException(emptyStream, attriDecode);
         }
     }
@@ -168,7 +166,7 @@ public abstract class Message {
      */
     public void setID(byte[] id) throws BadAttributeValueException {
         if(byteCheck(id, attriID)) {
-            messageID = id;
+            messageID = id.clone();
         } else {
             throw new BadAttributeValueException(attriID,
                     String.valueOf(ByteBuffer.wrap(id).
@@ -214,13 +212,7 @@ public abstract class Message {
     public void setRoutingService(RoutingService routServ)
             throws BadAttributeValueException {
         if(routServ != null) {
-            for(RoutingService a : RoutingService.values()) {
-                if(a.equals(routServ)) {
-                    messageService = routServ;
-                    return;
-                }
-            }
-            throw new BadAttributeValueException(attriRoutServ, unknownAttri);
+            messageService = routServ;
         } else {
             throw new BadAttributeValueException(attriRoutServ, emptyAttribute);
         }
@@ -243,7 +235,7 @@ public abstract class Message {
     public void setSourceAddress(byte[] srcAddr)
             throws BadAttributeValueException {
         if(byteCheck(srcAddr, attriSrcAddr)) {
-                messageSrcAddr = srcAddr;
+                messageSrcAddr = srcAddr.clone();
         } else {
             throw new BadAttributeValueException(attriSrcAddr, dataCheck);
         }
@@ -265,7 +257,7 @@ public abstract class Message {
     public void setDestinationAddress(byte[] destAddr)
             throws BadAttributeValueException{
         if(byteCheck(destAddr, attriDestAddr)) {
-            messageDestAddr = destAddr;
+            messageDestAddr = destAddr.clone();
         }
         else {
             throw new BadAttributeValueException(dataCheck, attriDestAddr);
@@ -282,7 +274,8 @@ public abstract class Message {
      * Sets the payload length
      * @param a payload length
      */
-    public abstract void setPayloadLength(int a) throws BadAttributeValueException;
+    public abstract void setPayloadLength(int a)
+            throws BadAttributeValueException;
 
     /**
      * Does a SharOn protocol check for byte arrays
@@ -293,21 +286,24 @@ public abstract class Message {
             throws BadAttributeValueException {
         int dataSize;
 
-        switch(attri) {
-            case attriID:
-                dataSize = searchParameters.ID.getVal();
-                break;
-            case attriSrcAddr:
-                dataSize = searchParameters.SRCADDR.getVal();
-                break;
-            case attriDestAddr:
-                dataSize = searchParameters.DESTADDR.getVal();
-                break;
-            default:
-                dataSize = 0;
-        }
+        if(a != null) {
+            switch(attri) {
+                case attriID:
+                    dataSize = messageParameters.ID.getVal();
+                    break;
+                case attriSrcAddr:
+                    dataSize = messageParameters.SRCADDR.getVal();
+                    break;
+                case attriDestAddr:
+                    dataSize = messageParameters.DESTADDR.getVal();
+                    break;
+                default:
+                    dataSize = 0;
+            }
 
-        return a.length == dataSize;
+            return a.length == dataSize;
+        }
+        return false;
     }
 
     /**
@@ -318,24 +314,9 @@ public abstract class Message {
     protected boolean intCheck(Integer a) {
         if(a != null) {
             String intData = String.valueOf(a);
-            if(intData.matches(numerics)) {
-                return true;
-            } else {
-                return false;
-            }
+            return intData.matches(numerics);
         } else {
             return false;
-        }
-    }
-
-    /**
-     * Useful function that adds a byte[] to a StringBuilder
-     * @param a StringBuilder to add to
-     * @param bytes bytes to add
-     */
-    protected void appendByteArr(StringBuilder a, byte[] bytes) {
-        for (byte b: bytes) {
-            a.append(b);
         }
     }
 
@@ -350,64 +331,62 @@ public abstract class Message {
         if(in.hasMore()) {
             int paraSize;
 
-            for(searchParameters para : searchParameters.values()) {
+            for(messageParameters para : messageParameters.values()) {
                 switch(para) {
                     case ID:
-                        paraSize = searchParameters.ID.getVal();
+                        paraSize = messageParameters.ID.getVal();
                         byte[] idHolder = new byte[paraSize];
 
                         for(int i = 0; i < paraSize; i++) {
-                            String a = in.nextOct_str();
-
-                            if("\n".equals(a)) {
+                            byte a = in.nextOct_byte();
+                            if('\n' == a) {
                                 throw new BadAttributeValueException
                                         (frameSizeOff, attriID);
                             }
-                            idHolder[i] = Byte.parseByte(a);
+                            idHolder[i] = a;
                         }
 
                         setID(idHolder);
                         break;
                     case TTL:
-                        setTtl(in.nextOct_int());
+                        setTtl(in.nextOct_byte());
                         break;
                     case ROUTINGSERVICE:
                         setRoutingService(RoutingService.getRoutingService
-                                (in.nextOct_int()));
+                                (in.nextOct_byte()));
                         break;
                     case SRCADDR:
-                        paraSize = searchParameters.SRCADDR.getVal();
+                        paraSize = messageParameters.SRCADDR.getVal();
                         byte[] srcAddrHolder = new byte[paraSize];
 
                         for(int i = 0; i < paraSize; i++) {
-                            String a = in.nextOct_str();
-
-                            if("\n".equals(a)) {
+                            byte a = in.nextOct_byte();
+                            if('\n' == a) {
                                 throw new BadAttributeValueException
                                         (frameSizeOff, attriSrcAddr);
                             }
-                            srcAddrHolder[i] = Byte.parseByte(a);
+                            srcAddrHolder[i] = a;
                         }
 
                         setSourceAddress(srcAddrHolder);
                         break;
                     case DESTADDR:
-                        paraSize = searchParameters.DESTADDR.getVal();
+                        paraSize = messageParameters.DESTADDR.getVal();
                         byte[] destAddrHolder = new byte[paraSize];
 
                         for(int i = 0; i < paraSize; i++) {
-                            String a = in.nextOct_str();
-                            destAddrHolder[i] = Byte.parseByte(a);
+                            byte a = in.nextOct_byte();
+                            destAddrHolder[i] = a;
                         }
 
                         setDestinationAddress(destAddrHolder);
                         break;
                     case PAYLOADLENGTH:
-                        paraSize = searchParameters.PAYLOADLENGTH.getVal();
+                        paraSize = messageParameters.PAYLOADLENGTH.getVal();
                         StringBuilder payloadHolder = new StringBuilder();
 
                         for(int i = 0; i < paraSize; i++) {
-                            String a = in.nextOct_str();
+                            byte a = in.nextOct_byte();
                             payloadHolder.append(a);
                         }
 
@@ -422,5 +401,14 @@ public abstract class Message {
         } else {
             throw new BadAttributeValueException(emptyStream, attriConstruct);
         }
+    }
+
+    public String toString() {
+        return "Type=" + getMessageType() + " ID=" + Arrays.toString(getID()) +
+                " TTL=" + getTtl() + " Routing=" +
+                getRoutingService().getServiceCode() + " Source=" +
+                new String(getSourceAddress()) + " Destination=" +
+                new String(getDestinationAddress()) + " Length=" +
+                getPayloadLength();
     }
 }

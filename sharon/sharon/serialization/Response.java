@@ -10,8 +10,9 @@ package sharon.serialization;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.nio.charset.StandardCharsets;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -76,19 +77,17 @@ public class Response extends Message {
         InetSocketAddress socketAddress;
         String hostAddr;
 
-        setMatches(in.nextOct_int());
+        setMatches(in.nextOct_byte());
 
         /*reading and assigning the port variable*/
         StringBuilder portHolder = new StringBuilder();
         for(int i = 0; i < 2; i++) {
-            String a = in.nextOct_str();
-            if(!"\n".equals(a)) {
-                portHolder.append(a);
-            }
-            else {
+            byte a = in.nextOct_byte();
+            if('\n' == a) {
                 throw new BadAttributeValueException
                         (frameSizeOff, attriConstruct);
             }
+            portHolder.append(a);
         }
 
         /*reading and assigning the response host variable*/
@@ -115,36 +114,39 @@ public class Response extends Message {
      */
     @Override
     public void encode(MessageOutput out) throws IOException {
-        StringBuilder encodedResponse = new StringBuilder();
+        /*will hold encoded Message*/
+        ByteBuffer encodeMessage = ByteBuffer.allocate(frameSize + 1);
 
-        encodedResponse.append(getMessageType());
+        /*adds message type to string*/
+        encodeMessage.put((byte)getMessageType());
 
-        appendByteArr(encodedResponse, getID());
+        /*adds message id to string*/
+        System.out.println(Arrays.toString(getID()));
+        encodeMessage.put(getID());
 
-        encodedResponse.append(getTtl()).append(getRoutingService().
-                getServiceCode());
+        /*adds message ttl*/
+        encodeMessage.put((byte)getTtl());
 
-        appendByteArr(encodedResponse, getSourceAddress());
-        appendByteArr(encodedResponse, getDestinationAddress());
+        /*adds the Routing service to string*/
+        encodeMessage.put((byte)getRoutingService().getServiceCode());
 
-        encodedResponse.append((byte)(getPayloadLength() >>> 8));
-        encodedResponse.append((byte)getPayloadLength());
+        /*adds message source address to string*/
+        encodeMessage.put(getSourceAddress());
 
-        encodedResponse.append(getMatches()).
-                append(getResponseHost().getPort());
+        /*adds message destination address to string*/
+        encodeMessage.put(getDestinationAddress());
 
-//        getting correct bytes just convert to the actual values
-        appendByteArr(encodedResponse,
-                getResponseHost().getHostString().
-                        getBytes(StandardCharsets.US_ASCII));
+        /*adds two bytes of the payload length to the encoded message*/
+        encodeMessage.put((byte)(getPayloadLength() >>> 8));
+        encodeMessage.put((byte)getPayloadLength());
 
+        encodeMessage.put((byte)getMatches());
+        encodeMessage.put((byte)getResponseHost().getPort());
+        encodeMessage.put(getResponseHost().getAddress().getAddress());
+        out.writeStr(new String(encodeMessage.array()));
         for(Result res : getResultList()) {
-            encodedResponse.append(res.getFileID()).append(res.getFileSize());
-            appendByteArr(encodedResponse,
-                    res.getFileName().getBytes(StandardCharsets.US_ASCII));
+            res.encode(out);
         }
-
-        out.writeStr(encodedResponse.substring(beginning));
     }
 
     /**

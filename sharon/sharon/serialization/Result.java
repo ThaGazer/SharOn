@@ -8,11 +8,8 @@
 
 package sharon.serialization;
 
-import javafx.util.Pair;
-
 import java.io.IOException;
 import java.util.Objects;
-
 
 /**
  * Represents a SharOn search result and provides serialization/deserialization
@@ -57,7 +54,7 @@ public class Result {
      * @param name file name
      * @throws BadAttributeValueException if bad attribute value
      */
-    public Result(Long id, Long size, String name)
+    public Result(long id, long size, String name)
             throws BadAttributeValueException {
         setFileID(id);
         setFileSize(size);
@@ -134,14 +131,10 @@ public class Result {
      * Set file ID
      * @param id_Long new file ID
      */
-    public void setFileID(Long id_Long) throws BadAttributeValueException {
-        if (id_Long != null) {
-            String id_Str = String.valueOf(id_Long);
-            if (id_Str.matches(nums)) {
-                fileId = Long.parseLong(id_Str);
-            } else {
-                throw new BadAttributeValueException(errMessage, IDstr);
-            }
+    public void setFileID(long id_Long) throws BadAttributeValueException {
+        String id_Str = String.valueOf(id_Long);
+        if (id_Str.matches(nums)) {
+            fileId = Long.parseLong(id_Str);
         } else {
             throw new BadAttributeValueException(errMessage, IDstr);
         }
@@ -151,14 +144,10 @@ public class Result {
      * Set file Size
      * @param id_Long new file Size
      */
-    public void setFileSize(Long id_Long) throws BadAttributeValueException {
-        if (id_Long != null) {
-            String id_Str = String.valueOf(id_Long);
-            if (id_Str.matches(nums)) {
-                fileSize = Long.parseLong(id_Str);
-            } else {
-                throw new BadAttributeValueException(errMessage, Sizestr);
-            }
+    public void setFileSize(long id_Long) throws BadAttributeValueException {
+        String id_Str = String.valueOf(id_Long);
+        if (id_Str.matches(nums)) {
+            fileSize = Long.parseLong(id_Str);
         } else {
             throw new BadAttributeValueException(errMessage, Sizestr);
         }
@@ -169,7 +158,7 @@ public class Result {
      * @param name new file Name
      * @throws BadAttributeValueException if bad attribute value
      */
-    public void setFileName(String name) throws BadAttributeValueException{
+    public void setFileName(String name) throws BadAttributeValueException {
         if (name != null) {
             if (name.matches(alphaNums) && !name.contains("\n")) {
                 fileName = name;

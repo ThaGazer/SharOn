@@ -48,13 +48,13 @@ public class ResultBoundsCheck {
     @Test (expected = BadAttributeValueException.class)
     public void testNullIDSet() throws BadAttributeValueException {
         res = new Result(id, size, name);
-        res.setFileID(null);
+        res.setFileID(0);
     }
 
     @Test (expected = BadAttributeValueException.class)
     public void testNullSizeSet() throws BadAttributeValueException {
         res = new Result(id, size, name);
-        res.setFileSize(null);
+        res.setFileSize(0);
     }
 
     @Test (expected = BadAttributeValueException.class)

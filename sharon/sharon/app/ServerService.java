@@ -24,14 +24,14 @@ import java.util.logging.Logger;
  */
 public class ServerService implements Runnable {
 
-    private static final String errorInHandler = "Exception in serverHandler";
+    private static final String errorConnectionClosed = "connection closed early";
     private static final String errorMsgCreation = "could not create message";
 
     private static final String infoReadingResp = "Reading search response: ";
     private static final String infoDownloadHost = "Download host: ";
 
     private static Socket clntSoc;
-    private Logger logger;
+    private static Logger logger = Logger.getLogger(Node.class.getName());
     private static String directory;
     private static int searchMatch;
     private static int downloadPort;
@@ -40,13 +40,11 @@ public class ServerService implements Runnable {
     /**
      * Creates a new ServerService
      * @param soc the connection to nodes
-     * @param logr logger
      * @param dir directory of files
      * @param dPort port where to download
      */
-    public ServerService(Socket soc, Logger logr, String dir, int dPort) {
+    public ServerService(Socket soc, String dir, int dPort) {
         clntSoc = soc;
-        logger = logr;
         directory = dir;
         searchMatch = 0;
         downloadPort = dPort;
@@ -56,50 +54,52 @@ public class ServerService implements Runnable {
     /**
      * the runnable function
      * @param soc the connection to nodes
-     * @param logger logger
      */
-    protected static void serverHandler(Socket soc, Logger logger) {
+    protected static void serverHandler(Socket soc) {
 
         try{
             MessageInput in = new MessageInput(soc.getInputStream());
             MessageOutput out = new MessageOutput(soc.getOutputStream());
 
             logger.info("Created and started thread " +
-                    Thread.currentThread().getName() + "\n");
+                    Thread.currentThread().getName());
 
             while(true) {
-                if(in.hasMore()) {
-                    Message msg = Message.decode(in);
-                    System.out.println(msg.getMessageType());
-                    switch (msg.getMessageType()) {
-                        case 1:
-                            if (fileChecker(directory,
-                                    ((Search) msg).getSearchString())) {
-                                responseBuilder(msg).encode(out);
-                            }
-                            break;
-                        case 2:
-                            String id = String.valueOf(ByteBuffer.wrap
-                                    (msg.getID()).order
-                                    (ByteOrder.LITTLE_ENDIAN).getInt());
-                            Response res = (Response) msg;
-                            logger.info(infoReadingResp + id + "\n" +
-                                    infoDownloadHost + " /" +
-                                    res.getResponseHost().getAddress() + ":" +
-                                    res.getResponseHost().getPort());
-                            for (Result r : res.getResultList()) {
-                                logger.info("  " + r.getFileName() + ": ID"
-                                        + r.getFileID() + " (" + r.getFileSize()
-                                        + " bytes)\n");
-                            }
-                            break;
+                try {
+                    if(in.hasMore()) {
+                        Message msg = Message.decode(in);
+                        System.out.println(msg);
+                        switch(msg.getMessageType()) {
+                            case 1:
+                                if(fileChecker(directory,
+                                        ((Search) msg).getSearchString())) {
+                                    responseBuilder(msg).encode(out);
+                                }
+                                break;
+                            case 2:
+                                String id = String.valueOf(ByteBuffer.wrap
+                                        (msg.getID()).order
+                                        (ByteOrder.LITTLE_ENDIAN).getInt());
+                                Response res = (Response) msg;
+                                logger.info(infoReadingResp + id + "\n" +
+                                        infoDownloadHost + " /" +
+                                        res.getResponseHost().getAddress() +
+                                        ":" + res.getResponseHost().getPort());
+                                for(Result r : res.getResultList()) {
+                                    logger.info("  " + r.getFileName() +
+                                            ": ID" + r.getFileID() + " (" +
+                                            r.getFileSize() + " bytes)\n");
+                                }
+                                break;
+                        }
                     }
+                } catch(IOException|BadAttributeValueException e) {
+                    System.out.println(in.getline());
+                    logger.log(Level.WARNING, errorMsgCreation, e);
                 }
             }
-        } catch(IOException e) {
-            logger.log(Level.WARNING, errorInHandler, e);
-        } catch (BadAttributeValueException e) {
-            logger.log(Level.WARNING, errorMsgCreation, e);
+        } catch(Exception e) {
+            logger.log(Level.SEVERE, errorConnectionClosed, e);
         } finally {
             try{
                 System.out.println("thread closed: " +
@@ -163,6 +163,6 @@ public class ServerService implements Runnable {
      */
     @Override
     public void run() {
-        serverHandler(clntSoc, logger);
+        serverHandler(clntSoc);
     }
 }

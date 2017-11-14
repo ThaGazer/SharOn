@@ -9,6 +9,8 @@
 package sharon.serialization;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 /**
  * Represents a SharOn search message
@@ -64,36 +66,41 @@ public class Search extends Message {
      */
     @Override
     public void encode(MessageOutput out) throws IOException {
-        StringBuilder encodedSearch = new StringBuilder();
+        /*will hold encoded Message*/
+        ByteBuffer encodeMessage = ByteBuffer.allocate(frameSize + 1);
 
         /*adds message type to string*/
-        encodedSearch.append(getMessageType());
+        encodeMessage.put((byte)getMessageType());
 
         /*adds message id to string*/
-        appendByteArr(encodedSearch, getID());
+        System.out.println(Arrays.toString(getID()));
+        encodeMessage.put(getID());
 
-        /*adds message ttl and the Routing service to string*/
-        encodedSearch.append(getTtl()).
-                append(getRoutingService().getServiceCode());
+        /*adds message ttl*/
+        encodeMessage.put((byte)getTtl());
+
+        /*adds the Routing service to string*/
+        encodeMessage.put((byte)getRoutingService().getServiceCode());
 
         /*adds message source address to string*/
-        appendByteArr(encodedSearch, getSourceAddress());
+        encodeMessage.put(getSourceAddress());
 
         /*adds message destination address to string*/
-        appendByteArr(encodedSearch, getDestinationAddress());
+        encodeMessage.put(getDestinationAddress());
 
         /*adds two bytes of the payload length to the encoded message*/
-        encodedSearch.append((byte)(getPayloadLength() >>> 8));
-        encodedSearch.append((byte)getPayloadLength());
+        encodeMessage.put((byte)(getPayloadLength() >>> 8));
+        encodeMessage.put((byte)getPayloadLength());
 
         /*adds the actual search string to the encoded string*/
-        encodedSearch.append(getSearchString());
+        encodeMessage.put(getSearchString().getBytes());
 
         /*closes the frame with \n\n*/
-        encodedSearch.append("\n\n");
+        encodeMessage.put("\n".getBytes());
 
+        System.out.println(Arrays.toString(encodeMessage.array()));
         /*writes out the encoded string*/
-        out.writeStr(encodedSearch.substring(beginning));
+        out.writeStr(new String(encodeMessage.array()));
     }
 
     @Override
@@ -145,5 +152,9 @@ public class Search extends Message {
         } else {
             throw new BadAttributeValueException(dataCheck, attriPayloadSize);
         }
+    }
+
+    public String toString() {
+        return super.toString() + " Payload=" + getSearchString();
     }
 }

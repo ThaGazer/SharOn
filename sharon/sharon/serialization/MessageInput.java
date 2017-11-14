@@ -36,44 +36,11 @@ public class MessageInput {
         messageIn = new InputStreamReader(in, StandardCharsets.US_ASCII);
     }
 
-    /**
-     * Grabs the next byte in the Stream and returns it as a String
-     * @return the next byte as a String
-     * @throws IOException if IO problem or null stream
-     */
-    public String nextOct_str() throws IOException {
-        String tok;
+    public byte nextOct_byte() throws  IOException {
         int a;
-
-        if (hasMore()) {
+        if(hasMore()) {
             if((a = messageIn.read()) != -1) {
-                byte[] b = new byte[]{(byte)(a)};
-                tok = new String(b, StandardCharsets.US_ASCII);
-            } else {
-                throw new IOException(badRead);
-            }
-        } else {
-            throw new IOException(emptyMessage);
-        }
-
-        return tok;
-    }
-
-    /**
-     * Grabs the next byte in the stream and returns it as a int
-     * @return the next byte as a int
-     * @throws IOException if IO problem or null stream
-     */
-    public int nextOct_int() throws IOException {
-        int a;
-
-        if (hasMore()) {
-            if((a = messageIn.read()) != -1) {
-                byte[] b = new byte[]{(byte)(a)};
-                String tok = new String(b, StandardCharsets.US_ASCII);
-                a = Integer.parseInt(tok);
-
-                return a;
+                return (byte)(a & 0xFFFF);
             } else {
                 throw new IOException(badRead);
             }
@@ -91,7 +58,7 @@ public class MessageInput {
         String token = "";
 
         for(int i = 0; i < 4; i++) {
-            token += nextOct_str();
+            token += nextOct_byte();
         }
 
         return token;
