@@ -12,16 +12,12 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
  * Represents a SharOn response message
  */
 public class Response extends Message {
-
-    /*error message for if a encoded message*/
-    private static final String frameSizeOff = "Error: frame size is incorrect";
 
     /*attributes of response*/
     private static final String attriAddResult = "addResult";
@@ -66,9 +62,9 @@ public class Response extends Message {
      */
     public Response(MessageInput in)
             throws IOException, BadAttributeValueException {
-        messageType = 2;
         setMessageFrame(in);
         setResponseFrame(in);
+        messageType = 2;
 
     }
 
@@ -83,10 +79,6 @@ public class Response extends Message {
         StringBuilder portHolder = new StringBuilder();
         for(int i = 0; i < 2; i++) {
             byte a = in.nextOct_byte();
-            if('\n' == a) {
-                throw new BadAttributeValueException
-                        (frameSizeOff, attriConstruct);
-            }
             portHolder.append(a);
         }
 
@@ -121,7 +113,6 @@ public class Response extends Message {
         encodeMessage.put((byte)getMessageType());
 
         /*adds message id to string*/
-        System.out.println(Arrays.toString(getID()));
         encodeMessage.put(getID());
 
         /*adds message ttl*/
@@ -246,5 +237,15 @@ public class Response extends Message {
             throw new BadAttributeValueException
                     (emptyAttribute, attriAddResult);
         }
+    }
+
+    public String toString() {
+        String ret = super.toString() + " Matches=" + messageMatches +
+                " Port=" + messageSocket.getPort() +
+                " Address=" + messageSocket.getAddress();
+        for(Result res : messageResList) {
+            ret += res.toString();
+        }
+        return ret;
     }
 }

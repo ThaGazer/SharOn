@@ -69,14 +69,12 @@ public abstract class Message {
     protected static final String attriSrcAddr = "Source Address";
     protected static final String attriDestAddr = "Destination Address";
     protected static final String attriDecode = "decode";
+    protected static final String attriPayload = "payloadLength";
 
     /*the size of a message frame minus the actual payload*/
     protected Integer frameSize = 1 + ID.getVal() + TTL.getVal() +
             ROUTINGSERVICE.getVal() + SRCADDR.getVal() +
             DESTADDR.getVal() + PAYLOADLENGTH.getVal();
-
-    /*declares the starting position of the StringBuilder class*/
-    protected static final int beginning = 0;
 
     protected byte[] messageID;
     protected int messageTtl;
@@ -345,15 +343,16 @@ public abstract class Message {
                             }
                             idHolder[i] = a;
                         }
-
                         setID(idHolder);
                         break;
                     case TTL:
-                        setTtl(in.nextOct_byte());
+                        byte ttl = in.nextOct_byte();
+                        setTtl(ttl);
                         break;
                     case ROUTINGSERVICE:
+                        byte rout = in.nextOct_byte();
                         setRoutingService(RoutingService.getRoutingService
-                                (in.nextOct_byte()));
+                                (rout));
                         break;
                     case SRCADDR:
                         paraSize = messageParameters.SRCADDR.getVal();
@@ -367,7 +366,6 @@ public abstract class Message {
                             }
                             srcAddrHolder[i] = a;
                         }
-
                         setSourceAddress(srcAddrHolder);
                         break;
                     case DESTADDR:
@@ -376,22 +374,29 @@ public abstract class Message {
 
                         for(int i = 0; i < paraSize; i++) {
                             byte a = in.nextOct_byte();
+                            if('\n' == a) {
+                                throw new BadAttributeValueException
+                                        (frameSizeOff, attriDestAddr);
+                            }
                             destAddrHolder[i] = a;
                         }
-
                         setDestinationAddress(destAddrHolder);
                         break;
                     case PAYLOADLENGTH:
                         paraSize = messageParameters.PAYLOADLENGTH.getVal();
-                        StringBuilder payloadHolder = new StringBuilder();
+                        byte[] payloadHolder = new byte[paraSize];
 
                         for(int i = 0; i < paraSize; i++) {
                             byte a = in.nextOct_byte();
-                            payloadHolder.append(a);
+                            if('\n' == a) {
+                                throw new BadAttributeValueException
+                                        (frameSizeOff, attriPayload);
+                            }
+                            payloadHolder[i] = a;
                         }
 
-                        setPayloadLength(Integer.parseUnsignedInt
-                                (payloadHolder.substring(beginning)));
+                        int payload = (payloadHolder[0] << 8) | payloadHolder[1];
+                        setPayloadLength(payload);
                         break;
                     default:
                         throw new BadAttributeValueException

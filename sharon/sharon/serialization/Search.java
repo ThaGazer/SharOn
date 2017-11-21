@@ -55,7 +55,8 @@ public class Search extends Message {
     public Search(MessageInput in)
             throws IOException, BadAttributeValueException {
         setMessageFrame(in);
-        setSearchString(in.getline());
+        String search = in.getline();
+        setSearchString(search);
         messageType = 1;
     }
 
@@ -73,7 +74,6 @@ public class Search extends Message {
         encodeMessage.put((byte)getMessageType());
 
         /*adds message id to string*/
-        System.out.println(Arrays.toString(getID()));
         encodeMessage.put(getID());
 
         /*adds message ttl*/
@@ -98,7 +98,6 @@ public class Search extends Message {
         /*closes the frame with \n\n*/
         encodeMessage.put("\n".getBytes());
 
-        System.out.println(Arrays.toString(encodeMessage.array()));
         /*writes out the encoded string*/
         out.writeStr(new String(encodeMessage.array()));
     }

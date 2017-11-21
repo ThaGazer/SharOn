@@ -234,7 +234,7 @@ public class Result {
      * @return human-readable Result representation
      */
     public String toString() {
-        return "fileID: " + getFileID() + ", fileSize: " + getFileSize() +
+        return " fileID: " + getFileID() + ", fileSize: " + getFileSize() +
                 ", fileName: " + getFileName();
     }
 }

@@ -21,7 +21,6 @@ public class MessageInput {
 
     /* error messages */
     private static final String badRead = "Error: nothing to read";
-    private static final String badFrame = "Error: incorrect frame";
     private static final String emptyMessage = "Error: empty message";
 
     /* a buffer for the class to hold stuff from the stream */
@@ -78,13 +77,8 @@ public class MessageInput {
         if(hasMore()) {
             while (!readDone && (a = messageIn.read()) != -1) {
                 if (a == '\n') {
-                    if (messageIn.read() != '\n') {
-                        throw new BadAttributeValueException
-                                (badFrame, "MessageInput");
-                    }
                     readDone = true;
                 } else {
-//                Checkout StringBuilder.append();
                     line += (char) a;
                 }
             }
@@ -92,9 +86,6 @@ public class MessageInput {
             throw new IOException("Empty input");
         }
 
-        if(line.isEmpty()) {
-            throw new BadAttributeValueException(emptyMessage, "MessageInput");
-        }
         return line;
     }
 

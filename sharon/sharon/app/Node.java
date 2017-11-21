@@ -55,7 +55,7 @@ public class Node {
             " is a key word, are you trying to search instead(y/n): ";
     private static final String msgNoConnection =
             "You are not connected to anyone";
-
+    private static final String msgSendingMessage = "sent: ";
 
     /*number of executor thread to have available*/
     private static final int EXECUTETHREADCOUNT = 4;
@@ -90,7 +90,6 @@ public class Node {
 
     private static List<Socket> socketArr;
     private static List<Thread> threadArr;
-    private static List<Long> searchArr;
 
     /**
      * runs a P2P connection between two Nodes
@@ -99,11 +98,11 @@ public class Node {
     public static void main(String[] args) throws IOException {
         socketArr = new ArrayList<>();
         threadArr = new ArrayList<>();
-        searchArr = new ArrayList<>();
 
         //testing for # of args
         if(args.length == 0) {
             servonlyStart = true;
+            docPath = "tmp";
         } else {
             if(!paramCheck(args)) {
                 System.out.println(msgCmdFormat);
@@ -170,7 +169,7 @@ public class Node {
                 protocolRes = protocolHandShakeReceived(soc);
                 break;
             case 2:
-                protocolRes =protocolHandShakeRequest(soc);
+                protocolRes = protocolHandShakeRequest(soc);
                 break;
             default:
                 protocolRes = false;
@@ -178,7 +177,6 @@ public class Node {
 
         if(protocolRes) {
             logger.info(msgGoodConnect + soc.getInetAddress());
-            //System.out.println(msgGoodConnect);
             socketArr.add(soc);
             Thread servThread = new Thread(new ServerService
                     (soc, docPath, downloadPortNumber));
@@ -400,6 +398,7 @@ public class Node {
                         RoutingService.BREADTHFIRSTBROADCAST,
                         "00000".getBytes(), "00000".getBytes(),
                         searchStr);
+        logger.info(msgSendingMessage + searchMessage);
         /*send search request to all nodes currently connected*/
         if(!socketArr.isEmpty()) {
             for(Socket s : socketArr) {

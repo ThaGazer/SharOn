@@ -24,15 +24,18 @@ import java.util.logging.Logger;
  */
 public class ServerService implements Runnable {
 
-    private static final String errorConnectionClosed = "connection closed early";
+    private static final String errorConnectionClosed =
+            "connection closed early";
     private static final String errorMsgCreation = "could not create message";
 
     private static final String infoReadingResp = "Reading search response: ";
     private static final String infoDownloadHost = "Download host: ";
+    private static final String infoSendResponse = "sent response: ";
+    private static final String infoRecieveSearch = "sent response: ";
 
     private static Socket clntSoc;
     private static Logger logger = Logger.getLogger(Node.class.getName());
-    private static String directory;
+    private static File directory;
     private static int searchMatch;
     private static int downloadPort;
     private static List<Result> resultList;
@@ -45,7 +48,7 @@ public class ServerService implements Runnable {
      */
     public ServerService(Socket soc, String dir, int dPort) {
         clntSoc = soc;
-        directory = dir;
+        directory = new File(dir);
         searchMatch = 0;
         downloadPort = dPort;
         resultList = new ArrayList<>();
@@ -68,13 +71,14 @@ public class ServerService implements Runnable {
                 try {
                     if(in.hasMore()) {
                         Message msg = Message.decode(in);
-                        System.out.println(msg);
+                        logger.info(infoRecieveSearch + msg);
                         switch(msg.getMessageType()) {
                             case 1:
-                                if(fileChecker(directory,
-                                        ((Search) msg).getSearchString())) {
-                                    responseBuilder(msg).encode(out);
-                                }
+                                fileChecker(directory,
+                                        ((Search) msg).getSearchString());
+                                Message response = responseBuilder(msg);
+                                logger.info(infoSendResponse + response);
+                                response.encode(out);
                                 break;
                             case 2:
                                 String id = String.valueOf(ByteBuffer.wrap
@@ -91,10 +95,13 @@ public class ServerService implements Runnable {
                                             r.getFileSize() + " bytes)\n");
                                 }
                                 break;
+                            default:
+                                throw new BadAttributeValueException
+                                        (errorMsgCreation, "server handler");
                         }
                     }
                 } catch(IOException|BadAttributeValueException e) {
-                    System.out.println(in.getline());
+                    System.out.println("extra " + in.getline());
                     logger.log(Level.WARNING, errorMsgCreation, e);
                 }
             }
@@ -112,30 +119,25 @@ public class ServerService implements Runnable {
 
     /**
      * finds a file in the directory
-     * @param dir directory to search
-     * @param file file to look for
-     * @return is the file was forund
+     * @param str string to search directory
      * @throws BadAttributeValueException errors building result
      */
-    public static boolean fileChecker(String dir, String file)
+    public static void fileChecker(File dir, String str)
             throws BadAttributeValueException {
-        File root = new File(dir);
-        File[] filesInRoot = root.listFiles();
+        File[] filesInRoot = dir.listFiles();
 
         if(filesInRoot != null) {
             for (File f : filesInRoot) {
                 if(f.isDirectory()) {
-                    fileChecker(f.getName(), file);
-                } else if(f.getName().equals(file)) {
+                    fileChecker(f, str);
+                } else if(f.getName().contains(str)) {
                     searchMatch++;
                     Integer fileId = f.getName().hashCode();
                     resultList.add(new Result(fileId.longValue(),
-                            f.getTotalSpace(), f.getName()));
-                    return true;
+                            f.length(), f.getName()));
                 }
             }
         }
-        return false;
     }
 
     /**
