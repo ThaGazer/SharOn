@@ -9,6 +9,8 @@
 package sharon.serialization;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.Objects;
 
 /**
@@ -20,16 +22,18 @@ public class Result {
     private long fileSize; //holds the file size
     private String fileName; //holds the file name
 
-    /*string check for numeric characters*/
-    private static final String nums = "^[\\d]+$";
+    /*frame size of result*/
+    private int frameSize = 9;
 
     /*string check for alphanumeric characters*/
     private static final String alphaNums = "^[\\w\\-_.\\s]+$";
 
-    private static final String errMessage = "Error: bad field"; //error message
+    private static final String errMessage = "bad field"; //error message
+
     private static final String IDstr = "ID"; //id field
     private static final String Sizestr = "SIZE"; //Size field
     private static final String Namestr = "NAME"; //Name field
+    private static final String msgB2I = "byte to int";
 
     /**
      * Constructs a single Result instance from given input stream
@@ -40,11 +44,9 @@ public class Result {
      */
     public Result(MessageInput in) throws IOException,
             BadAttributeValueException {
-        if(in.hasMore()) {
-            setFileID(Long.parseLong(in.next4Tok()));
-            setFileSize(Long.parseLong(in.next4Tok()));
-            setFileName(in.getline());
-        }
+        setFileID(b2l(in.next4Tok()));
+        setFileSize(b2l(in.next4Tok()));
+        setFileName(in.getline());
     }
 
     /**
@@ -62,53 +64,18 @@ public class Result {
     }
 
     /**
-     * gets file id in bytes
-     * @return file id in bytes
-     */
-    private String getFileID_bytes() {
-        byte[] resultBytes = new byte[4];
-        StringBuilder resStr = new StringBuilder();
-        Long tmpId = fileId;
-
-        for (int i = 3; i >= 0; i--) {
-            resultBytes[i] = (byte)(tmpId & 0xFF);
-            tmpId >>= 4;
-        }
-
-        for (byte bytes : resultBytes) {
-            resStr.append(bytes);
-        }
-
-        return resStr.toString();
-    }
-
-    /**
-     * gets file size in bytes
-     * @return file size in bytes
-     */
-    private String getFileSize_bytes() {
-        byte[] resultBytes = new byte[4];
-        StringBuilder resStr = new StringBuilder();
-        Long tmpSize = fileSize;
-
-        for (int i = 3; i >= 0; i--) {
-            resultBytes[i] = (byte)(tmpSize & 0xFF);
-            tmpSize >>= 4;
-        }
-
-        for (byte bytes : resultBytes) {
-            resStr.append(bytes);
-        }
-
-        return resStr.toString();
-    }
-
-    /**
      * Get file ID
      * @return file ID
      */
     public long getFileID() {
         return fileId;
+    }
+
+    private byte[] getFileID_byte() {
+        return new byte[] {(byte)((fileId >>> 24) & 0xFF),
+                (byte)((fileId >>> 16) & 0xFF),
+                (byte)((fileId >>> 8) & 0xFF),
+                (byte)((fileId) & 0xFF)};
     }
 
     /**
@@ -119,6 +86,12 @@ public class Result {
         return fileSize;
     }
 
+    private byte[] getFileSIZE_byte() {
+        return new byte[] {(byte)((fileSize >>> 24) & 0xFF),
+                (byte)((fileSize >>> 16) & 0xFF),
+                (byte)((fileSize >>> 8) & 0xFF),
+                (byte)((fileSize) & 0xFF)};
+    }
     /**
      * Get file Name
      * @return file Name
@@ -128,13 +101,13 @@ public class Result {
     }
 
     /**
-     * Set file ID
-     * @param id_Long new file ID
+     * Sets id of result
+     * @param id id to set
+     * @throws BadAttributeValueException if bad attribute
      */
-    public void setFileID(long id_Long) throws BadAttributeValueException {
-        String id_Str = String.valueOf(id_Long);
-        if (id_Str.matches(nums)) {
-            fileId = Long.parseLong(id_Str);
+    public void setFileID(long id) throws BadAttributeValueException {
+        if(id >= 0) {
+            fileId = id;
         } else {
             throw new BadAttributeValueException(errMessage, IDstr);
         }
@@ -142,12 +115,11 @@ public class Result {
 
     /**
      * Set file Size
-     * @param id_Long new file Size
+     * @param size new file Size
      */
-    public void setFileSize(long id_Long) throws BadAttributeValueException {
-        String id_Str = String.valueOf(id_Long);
-        if (id_Str.matches(nums)) {
-            fileSize = Long.parseLong(id_Str);
+    public void setFileSize(long size) throws BadAttributeValueException {
+        if(size >= 0) {
+            fileSize = size;
         } else {
             throw new BadAttributeValueException(errMessage, Sizestr);
         }
@@ -160,8 +132,9 @@ public class Result {
      */
     public void setFileName(String name) throws BadAttributeValueException {
         if (name != null) {
-            if (name.matches(alphaNums) && !name.contains("\n")) {
+            if (name.matches(alphaNums) && !"\n".contains(name)) {
                 fileName = name;
+                frameSize += fileName.length();
             } else {
                 throw new BadAttributeValueException(errMessage, Namestr);
             }
@@ -176,9 +149,28 @@ public class Result {
      * @throws IOException if unable to serialize Result instance
      */
     public void encode(MessageOutput out) throws IOException {
-        String id_Str = getFileID_bytes() + getFileSize_bytes();
-        id_Str += getFileName() + "\n\n";
-        out.writeStr(id_Str);
+        ByteBuffer em = ByteBuffer.allocate(frameSize);
+
+        em.put(getFileID_byte());
+        em.put(getFileSIZE_byte());
+        em.put(getFileName().getBytes());
+        em.put("\n".getBytes());
+
+        out.writeStr(new String(em.array()));
+    }
+
+    /**
+     * converts a byte[] to an int
+     * @param bArr byte[] to convert
+     * @return the int value
+     * @throws BadAttributeValueException if the byte[] is not the right size
+     */
+    private int b2l(byte[] bArr) throws BadAttributeValueException {
+        if(bArr.length == 4) {
+            return (bArr[0] << 24) | (bArr[1] << 16) | (bArr[2] << 8) | bArr[3];
+        } else {
+            throw new BadAttributeValueException(errMessage, msgB2I);
+        }
     }
 
     /**

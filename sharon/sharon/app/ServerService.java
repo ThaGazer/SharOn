@@ -15,6 +15,7 @@ import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -26,12 +27,12 @@ public class ServerService implements Runnable {
 
     private static final String errorConnectionClosed =
             "connection closed early";
-    private static final String errorMsgCreation = "could not create message";
+    private static final String errorMsgCreation = "could not create message ";
 
     private static final String infoReadingResp = "Reading search response: ";
     private static final String infoDownloadHost = "Download host: ";
-    private static final String infoSendResponse = "sent response: ";
-    private static final String infoRecieveSearch = "sent response: ";
+    private static final String infoSendResponse = "send response: ";
+    private static final String infoReceiveSearch = "receive response: ";
 
     private static Socket clntSoc;
     private static Logger logger = Logger.getLogger(Node.class.getName());
@@ -71,28 +72,28 @@ public class ServerService implements Runnable {
                 try {
                     if(in.hasMore()) {
                         Message msg = Message.decode(in);
-                        logger.info(infoRecieveSearch + msg);
+                        logger.fine(infoReceiveSearch + msg);
                         switch(msg.getMessageType()) {
                             case 1:
                                 fileChecker(directory,
                                         ((Search) msg).getSearchString());
                                 Message response = responseBuilder(msg);
-                                logger.info(infoSendResponse + response);
                                 response.encode(out);
+                                logger.fine(infoSendResponse + response);
+
+                                /*reset for next search*/
+                                searchMatch = 0;
+                                resultList.clear();
                                 break;
                             case 2:
-                                String id = String.valueOf(ByteBuffer.wrap
-                                        (msg.getID()).order
-                                        (ByteOrder.LITTLE_ENDIAN).getInt());
                                 Response res = (Response) msg;
-                                logger.info(infoReadingResp + id + "\n" +
-                                        infoDownloadHost + " /" +
+                                System.out.println(infoDownloadHost +
                                         res.getResponseHost().getAddress() +
                                         ":" + res.getResponseHost().getPort());
                                 for(Result r : res.getResultList()) {
-                                    logger.info("  " + r.getFileName() +
-                                            ": ID" + r.getFileID() + " (" +
-                                            r.getFileSize() + " bytes)\n");
+                                    System.out.println("\t" + r.getFileName() +
+                                            ": ID " + r.getFileID() + " (" +
+                                            r.getFileSize() + " bytes)");
                                 }
                                 break;
                             default:
@@ -101,8 +102,8 @@ public class ServerService implements Runnable {
                         }
                     }
                 } catch(IOException|BadAttributeValueException e) {
-                    System.out.println("extra " + in.getline());
-                    logger.log(Level.WARNING, errorMsgCreation, e);
+                    logger.log(Level.WARNING,
+                            errorMsgCreation + in.getline(), e);
                 }
             }
         } catch(Exception e) {

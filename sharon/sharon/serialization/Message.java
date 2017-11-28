@@ -82,7 +82,7 @@ public abstract class Message {
     protected byte[] messageSrcAddr;
     protected byte[] messageDestAddr;
     protected int messagePayloadLength;
-    protected Integer messageType;
+    protected int messageType;
 
     /**
      * default constructor for compiling
@@ -412,8 +412,8 @@ public abstract class Message {
         return "Type=" + getMessageType() + " ID=" + Arrays.toString(getID()) +
                 " TTL=" + getTtl() + " Routing=" +
                 getRoutingService().getServiceCode() + " Source=" +
-                new String(getSourceAddress()) + " Destination=" +
-                new String(getDestinationAddress()) + " Length=" +
+                Arrays.toString(getSourceAddress()) + " Destination=" +
+                Arrays.toString(getDestinationAddress()) + " Length=" +
                 getPayloadLength();
     }
 }

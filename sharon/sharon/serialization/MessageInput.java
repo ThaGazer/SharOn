@@ -39,7 +39,7 @@ public class MessageInput {
         int a;
         if(hasMore()) {
             if((a = messageIn.read()) != -1) {
-                return (byte)(a & 0xFFFF);
+                return (byte)(a & 0xFF);
             } else {
                 throw new IOException(badRead);
             }
@@ -53,14 +53,13 @@ public class MessageInput {
      * @return next word in stream
      * @throws IOException if I/O problem
      */
-    public String next4Tok() throws IOException {
-        String token = "";
-
+    public byte[] next4Tok() throws IOException {
+        byte[] a = new byte[4];
         for(int i = 0; i < 4; i++) {
-            token += nextOct_byte();
+             a[i] = nextOct_byte();
         }
 
-        return token;
+        return a;
     }
 
     /**
@@ -83,7 +82,7 @@ public class MessageInput {
                 }
             }
         } else {
-            throw new IOException("Empty input");
+            line = "";
         }
 
         return line;

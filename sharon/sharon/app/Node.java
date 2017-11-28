@@ -12,13 +12,13 @@ import sharon.serialization.*;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.logging.*;
 
 import static java.lang.System.exit;
+import static sharon.app.ClientCommand.*;
 
 /**
  * a peer to peer node
@@ -32,7 +32,6 @@ public class Node {
     private static final String usageDownload =
             "Usage: download <address> <port> <file ID> <file name>";
     private static final String usageExit = "Usage: exit";
-    private static final String usageSearch = "Usage: <search string>";
 
     /*error messaging*/
     private static final String errorSocketClosed = "Connection closed early";
@@ -150,7 +149,6 @@ public class Node {
             for(Thread t : threadArr) {
                 t.join();
             }
-
             for(Socket s : socketArr) {
                 s.close();
             }
@@ -316,41 +314,39 @@ public class Node {
                 try {
                     cmdParts = command.split("\\s");
                     ClientCommand cmd = ClientCommand.getByCmd(cmdParts[0]);
-                    switch(cmd) {
-                        case CONNECT:
-                            if(cmdFormatCheck(cmdParts)) {
-                               connectHandler(cmdParts);
+                    if(cmd == CONNECT) {
+                        if(cmdFormatCheck(cmdParts)) {
+                            connectHandler(cmdParts);
+                        } else {
+                            System.out.println(cmdParts[0] +
+                                    msgCommandConfirm);
+                            String userResponse = scn.readLine();
+                            if(userResponse.charAt(0) == 'y') {
+                                searchHandler(command);
                             } else {
-                               System.out.println(cmdParts[0] +
-                                       msgCommandConfirm);
-                               String userResponse = scn.readLine();
-                               if(userResponse.charAt(0) == 'y') {
-                                   searchHandler(command);
-                               } else {
-                                   System.out.println(usageConnect);
-                               }
+                                System.out.println(usageConnect);
                             }
-                           break;
-                        case DOWNLOAD:
-                            if(cmdFormatCheck(cmdParts)) {
-                                downloadHandler(cmdParts, logger);
+                        }
+                    } else if(cmd == DOWNLOAD) {
+                        if(cmdFormatCheck(cmdParts)) {
+                            downloadHandler(cmdParts, logger);
+                        } else {
+                            System.out.println(cmdParts[0] +
+                                    msgCommandConfirm);
+                            String userResponse = scn.readLine();
+                            if(userResponse.charAt(0) == 'y') {
+                                searchHandler(command);
                             } else {
-                                System.out.println(cmdParts[0] +
-                                        msgCommandConfirm);
-                                String userResponse = scn.readLine();
-                                if(userResponse.charAt(0) == 'y') {
-                                    searchHandler(command);
-                                } else {
-                                    System.out.println(usageDownload);
-                                }
+                                System.out.println(usageDownload);
                             }
-                           break;
-                        case SEARCH:
-                            searchHandler(command);
-                            break;
-                        case EXIT:
-                            System.out.println(msgCloseNode);
-                            exit(0);
+                        }
+                    } else if(cmd == EXIT) {
+                        System.out.println(msgCloseNode);
+                        exit(0);
+                    } else if(cmd == SEARCH) {
+                        searchHandler(command);
+                    } else {
+
                     }
                 } catch(IOException|BadAttributeValueException e) {
                     logger.log(Level.WARNING, errorLocClient,
@@ -393,12 +389,16 @@ public class Node {
      */
     public static void searchHandler(String searchStr)
             throws IOException, BadAttributeValueException {
+        if(searchStr.isEmpty()) {
+            searchStr = "";
+        }
         Message searchMessage = new Search
                 (nextID(), 1,
                         RoutingService.BREADTHFIRSTBROADCAST,
                         "00000".getBytes(), "00000".getBytes(),
                         searchStr);
-        logger.info(msgSendingMessage + searchMessage);
+        System.out.println("Search response for: " + searchStr);
+        logger.fine(msgSendingMessage + searchMessage);
         /*send search request to all nodes currently connected*/
         if(!socketArr.isEmpty()) {
             for(Socket s : socketArr) {
@@ -454,8 +454,8 @@ public class Node {
     public static byte[] nextID() {
         byte[] res = new byte[15];
         for(int i = 0; i < 15; i++) {
-            res[i] = (byte) (new Random().
-                    nextInt() & 0x000000ff);
+            int a = (new Random().nextInt(125));
+            res[i] = (byte)(a & 0xFF);
         }
         return res.clone();
     }

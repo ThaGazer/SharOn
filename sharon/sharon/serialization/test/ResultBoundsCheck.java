@@ -30,8 +30,8 @@ import static org.junit.Assert.*;
 public class ResultBoundsCheck {
     String expctStr = "00010001656565\n\n";
     Result res;
-    Long id = 1L;
-    Long size = 1L;
+    int id = 1;
+    int size = 1;
     String name = "bob";
 
     public ResultBoundsCheck() {
@@ -39,9 +39,9 @@ public class ResultBoundsCheck {
 
     @Test (expected = BadAttributeValueException.class)
     public void testNullConstruct() throws BadAttributeValueException {
-        id = null;
-        size = null;
-        name = null;
+        id = 0;
+        size = 0;
+        name = "";
         res = new Result(id, size, name);
     }
 
@@ -60,7 +60,7 @@ public class ResultBoundsCheck {
     @Test (expected = BadAttributeValueException.class)
     public void testNullNameSet() throws BadAttributeValueException {
         res = new Result(id, size, name);
-        res.setFileName(null);
+        res.setFileName("");
     }
 
     @Test

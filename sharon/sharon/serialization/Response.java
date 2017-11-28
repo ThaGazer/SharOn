@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -24,6 +25,7 @@ public class Response extends Message {
     private static final String attriPayLength = "Payload Length";
     private static final String attriResponseHost = "Response Host";
     private static final String attriMatch = "Matches";
+    private static final String attriPort = "port";
 
     /*declares the start of the StringBuilder class*/
     private static final Integer beginning = 0;
@@ -70,31 +72,32 @@ public class Response extends Message {
 
     public void setResponseFrame(MessageInput in) throws IOException,
             BadAttributeValueException {
-        InetSocketAddress socketAddress;
-        String hostAddr;
 
         setMatches(in.nextOct_byte());
 
         /*reading and assigning the port variable*/
-        StringBuilder portHolder = new StringBuilder();
+        byte[] bPort = new byte[2];
         for(int i = 0; i < 2; i++) {
             byte a = in.nextOct_byte();
-            portHolder.append(a);
+            if('\n' == a) {
+                throw new BadAttributeValueException(frameSizeOff, attriPort);
+            }
+            bPort[i] = a;
         }
+        int port = bPort[0] << 8 | bPort[1];
 
         /*reading and assigning the response host variable*/
-        if(!"\n".contains(hostAddr = in.next4Tok())) {
-            socketAddress = new InetSocketAddress
-                    (hostAddr, Integer.parseUnsignedInt
-                            (portHolder.substring(beginning)));
-
+        String hostAddr;
+        InetSocketAddress socketAddress;
+        if(!"\n".contains(hostAddr = new String(in.next4Tok()))) {
+            socketAddress = new InetSocketAddress(hostAddr, port);
         } else {
             throw new IOException("Frame size incorrect");
         }
         setResponseHost(socketAddress);
 
         /*reading all of the result objects*/
-        while(in.hasMore()) {
+        for(int i = 0; i < getMatches(); i++) {
             addResult(new Result(in));
         }
     }
@@ -107,7 +110,7 @@ public class Response extends Message {
     @Override
     public void encode(MessageOutput out) throws IOException {
         /*will hold encoded Message*/
-        ByteBuffer encodeMessage = ByteBuffer.allocate(frameSize + 1);
+        ByteBuffer encodeMessage = ByteBuffer.allocate(frameSize);
 
         /*adds message type to string*/
         encodeMessage.put((byte)getMessageType());
@@ -134,6 +137,7 @@ public class Response extends Message {
         encodeMessage.put((byte)getMatches());
         encodeMessage.put((byte)getResponseHost().getPort());
         encodeMessage.put(getResponseHost().getAddress().getAddress());
+
         out.writeStr(new String(encodeMessage.array()));
         for(Result res : getResultList()) {
             res.encode(out);

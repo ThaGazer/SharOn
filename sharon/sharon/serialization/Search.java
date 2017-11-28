@@ -55,8 +55,7 @@ public class Search extends Message {
     public Search(MessageInput in)
             throws IOException, BadAttributeValueException {
         setMessageFrame(in);
-        String search = in.getline();
-        setSearchString(search);
+        setSearchString(in.getline());
         messageType = 1;
     }
 
