@@ -45,9 +45,8 @@ public class downloadRequestHandler implements Runnable {
     /**
      * handles a request request from other nodes
      * @param soc socket connection to other nodes
-     * @param logger logger
      */
-    protected static void requestHandler(Socket soc, Logger logger) {
+    protected static void requestHandler(Socket soc) {
         try {
             InputStream in = soc.getInputStream();
             OutputStream out = soc.getOutputStream();
@@ -81,6 +80,6 @@ public class downloadRequestHandler implements Runnable {
      */
     @Override
     public void run() {
-        requestHandler(clntSoc, logger);
+        requestHandler(clntSoc);
     }
 }

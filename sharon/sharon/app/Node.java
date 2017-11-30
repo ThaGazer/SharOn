@@ -18,40 +18,30 @@ import java.util.concurrent.Executors;
 import java.util.logging.*;
 
 import static java.lang.System.exit;
-import static sharon.app.ClientCommand.*;
 
 /**
  * a peer to peer node
  */
 public class Node {
-
-
-    /*the clients command options*/
-    private static final String usageConnect =
-            "Usage: connect <address> <port>";
-    private static final String usageDownload =
-            "Usage: download <address> <port> <file ID> <file name>";
-    private static final String usageExit = "Usage: exit";
-
     /*error messaging*/
     private static final String errorSocketClosed = "Connection closed early";
     private static final String errorIncorrectFrame = "Incorrect framing";
     private static final String errorFNF = "File/Folder not found!";
-    private static final String errorServConnectFail = "server accept failed";
     private static final String errorCode301 = "301";
     private static final String errorLocClient = "client side ";
     private static final String errorServerFailed = "server side ";
+    private static final String errorDownloadFailed = "download side ";
     private static final String errorEOS = "end of stream";
 
     /*messages to either logger or user*/
     private static final String msgCmdFormat =
             "Parameter(s): <Server> <Port> <filePath>\n";
     private static final String msgServerStart = "Starting this nodes server";
+    private static final String msgDownloadStart =
+            "Starting this download server";
     private static final String msgGoodConnect = "connection successful: ";
     private static final String msgBadConnect = "connection failed: ";
     private static final String msgCloseNode = "Shutting down Node";
-    private static final String msgCommandConfirm =
-            " is a key word, are you trying to search instead(y/n): ";
     private static final String msgNoConnection =
             "You are not connected to anyone";
     private static final String msgSendingMessage = "sent: ";
@@ -124,26 +114,8 @@ public class Node {
         /*handles users request*/
         clientHandler();
 
-        /*Thread downloadThread = new Thread(() -> {
-            try (ServerSocket dwnLoadSoc =
-                         new ServerSocket(downloadPortNumber)) {
-                dwnLoadSoc.setReuseAddress(true);
-                Executor dwnloadService =
-                        Executors.newFixedThreadPool(EXECUTETHREADCOUNT);
-                while (true) {
-                    Socket dwnLoadClient = dwnLoadSoc.accept();
-                    socketArr.add(dwnLoadClient);
-                    dwnloadService.execute(new downloadServiceHandler
-                            (dwnLoadClient, logger, docPath));
-
-                }
-            } catch (IOException e) {
-                System.out.println(errorSocketClosed + e.getMessage());
-            }
-        });
-        threadArr.add(downloadThread);
-        downloadThread.start();*/
-
+        /*handles consuming downloading*/
+        downloadServerHandler();
 
         try {
             for(Thread t : threadArr) {
@@ -209,27 +181,6 @@ public class Node {
             exit(-1);
         }
         return true;
-    }
-
-    /**
-     * checks commands for client commmands
-     * @param a the command broken in parts
-     * @return if it is a client command
-     */
-    public static boolean cmdFormatCheck(String[] a) {
-        ClientCommand cmd = ClientCommand.getByCmd(a[0].toLowerCase());
-        switch(cmd) {
-            case EXIT:
-                return a.length == 1;
-            case CONNECT:
-                return a.length == 3;
-            case DOWNLOAD:
-                return a.length == 5;
-            case SEARCH:
-                return true;
-            default:
-                return false;
-        }
     }
 
     /**
@@ -313,40 +264,23 @@ public class Node {
             while((command = scn.readLine()) != null) {
                 try {
                     cmdParts = command.split("\\s");
-                    ClientCommand cmd = ClientCommand.getByCmd(cmdParts[0]);
-                    if(cmd == CONNECT) {
-                        if(cmdFormatCheck(cmdParts)) {
-                            connectHandler(cmdParts);
-                        } else {
-                            System.out.println(cmdParts[0] +
-                                    msgCommandConfirm);
-                            String userResponse = scn.readLine();
-                            if(userResponse.charAt(0) == 'y') {
-                                searchHandler(command);
-                            } else {
-                                System.out.println(usageConnect);
-                            }
-                        }
-                    } else if(cmd == DOWNLOAD) {
-                        if(cmdFormatCheck(cmdParts)) {
-                            downloadHandler(cmdParts, logger);
-                        } else {
-                            System.out.println(cmdParts[0] +
-                                    msgCommandConfirm);
-                            String userResponse = scn.readLine();
-                            if(userResponse.charAt(0) == 'y') {
-                                searchHandler(command);
-                            } else {
-                                System.out.println(usageDownload);
-                            }
-                        }
-                    } else if(cmd == EXIT) {
-                        System.out.println(msgCloseNode);
-                        exit(0);
-                    } else if(cmd == SEARCH) {
-                        searchHandler(command);
-                    } else {
+                    ClientCommand cmd = ClientCommand.getByCmd(cmdParts);
 
+                    switch(cmd) {
+                        case CONNECT:
+                            connectHandler(cmdParts);
+                            break;
+                        case DOWNLOAD:
+                            downloadHandler(cmdParts);
+                            break;
+                        case EXIT:
+                            System.out.println(msgCloseNode);
+                            logger.info(msgCloseNode);
+                            exit(0);
+                            break;
+                        case SEARCH:
+                            searchHandler(command);
+                            break;
                     }
                 } catch(IOException|BadAttributeValueException e) {
                     logger.log(Level.WARNING, errorLocClient,
@@ -379,6 +313,32 @@ public class Node {
         });
         threadArr.add(serverThread);
         serverThread.start();
+    }
+
+    public static void downloadServerHandler() {
+        Thread downloadThread = new Thread(() -> {
+            logger.info(msgDownloadStart);
+            try (ServerSocket dwnLoadSoc =
+                         new ServerSocket(downloadPortNumber)) {
+                dwnLoadSoc.setReuseAddress(true);
+                Executor dwnloadService =
+                        Executors.newFixedThreadPool(EXECUTETHREADCOUNT);
+                while (true) {
+                    try {
+                        Socket dwnLoadClient = dwnLoadSoc.accept();
+                        dwnloadService.execute(new downloadServiceHandler
+                                (dwnLoadClient, docPath));
+                    } catch(IOException e) {
+                        logger.log(Level.WARNING, errorDownloadFailed, e);
+                    }
+                }
+            } catch (IOException e) {
+                logger.log(Level.SEVERE,
+                        errorSocketClosed + e.getMessage(), e);
+            }
+        });
+        threadArr.add(downloadThread);
+        downloadThread.start();
     }
 
     /**
@@ -422,10 +382,9 @@ public class Node {
     /**
      * handles down loading a file
      * @param params download parameters
-     * @param logger logger
      * @throws IOException problems creating a socket
      */
-    public static void downloadHandler(String[] params, Logger logger)
+    public static void downloadHandler(String[] params)
             throws IOException {
         Socket socket = new Socket(params[1], Integer.parseInt(params[2]));
         Thread dwnloadReq = new Thread(new downloadRequestHandler(socket,

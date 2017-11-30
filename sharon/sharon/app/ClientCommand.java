@@ -16,14 +16,26 @@ public enum ClientCommand {
         name = s;
     }
 
-    public static ClientCommand getByCmd(String cmd) {
-        switch(cmd.toLowerCase()) {
+    public static ClientCommand getByCmd(String[] cmd) {
+        switch(cmd[0].toLowerCase()) {
             case "connect":
-                return CONNECT;
+                if(cmd.length == 3) {
+                    return CONNECT;
+                } else {
+                    return SEARCH;
+                }
             case "download":
-                return DOWNLOAD;
+                if(cmd.length == 5) {
+                    return DOWNLOAD;
+                } else {
+                    return SEARCH;
+                }
             case "exit":
-                return EXIT;
+                if(cmd.length == 1) {
+                    return EXIT;
+                } else {
+                    return SEARCH;
+                }
             default:
                 return SEARCH;
         }

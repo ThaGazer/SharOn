@@ -18,56 +18,48 @@ import java.util.logging.Logger;
 public class downloadServiceHandler implements Runnable {
 
     private static Socket socket;
-    private static Logger logger;
     private static String directory;
+
+    private static String errNoFile = "could not find file";
 
     /**
      * creates a request handler
      * @param soc socket connection to other nodes
-     * @param log logger
      * @param dir directory of files
      */
-    public downloadServiceHandler(Socket soc, Logger log, String dir) {
+    public downloadServiceHandler(Socket soc, String dir) {
         socket = soc;
-        logger = log;
         directory = dir;
     }
 
     /**
      * handles a download request from other nodes
      * @param soc socket connection to other node
-     * @param logger logger
      */
-    public static void serviceHandler(Socket soc, Logger logger) {
+    public static void serviceHandler(Socket soc) {
         try {
             InputStream in = soc.getInputStream();
             OutputStream out = soc.getOutputStream();
 
             String fIDStr = "";
-            int byteIn;
+            int bIn;
             boolean readDone = false;
-            while(!readDone && (byteIn = in.read()) != -1) {
-                String inStr = String.valueOf(byteIn);
-                if(!"\n".equals(inStr)) {
-                    fIDStr += inStr;
+            while(!readDone && (bIn = in.read()) != -1) {
+                if(!('\n' == bIn)) {
+                    fIDStr += (char)bIn;
                 } else {
                     readDone = true;
                 }
             }
 
-            File outFile = new File(fileFinder(Integer.valueOf(fIDStr)));
+            File outFile = fileFinder(fIDStr);
             FileInputStream readFile = new FileInputStream(outFile);
-            ByteBuffer buff = ByteBuffer.allocate(10000);
 
             int a;
             while((a = readFile.read()) != -1) {
-                buff.putInt(a);
+                out.write(a);
             }
-
-            out.write(buff.array());
             soc.close();
-
-
         } catch(IOException e) {
             e.printStackTrace();
         } finally {
@@ -85,7 +77,8 @@ public class downloadServiceHandler implements Runnable {
      * @param idStr id of file to find
      * @return return the name of the file if found
      */
-    private static String fileFinder(int idStr) {
+    private static File fileFinder(String idStr) throws IOException {
+        int id = Integer.parseInt(idStr);
         File root = new File(directory);
         File[] filesInRoot = root.listFiles();
 
@@ -93,12 +86,12 @@ public class downloadServiceHandler implements Runnable {
             for(File f : filesInRoot) {
                 if(f.isDirectory()) {
                     fileFinder(idStr);
-                } else if(f.getName().hashCode() == idStr){
-                    return f.getName();
+                } else if(f.getName().hashCode() == id){
+                    return f;
                 }
             }
         }
-        return "";
+       throw new IOException(errNoFile);
     }
 
     /**
@@ -106,6 +99,6 @@ public class downloadServiceHandler implements Runnable {
      */
     @Override
     public void run() {
-        serviceHandler(socket, logger);
+        serviceHandler(socket);
     }
 }
